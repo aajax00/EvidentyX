@@ -5,7 +5,7 @@ Chaque étape correspond à un ou plusieurs commits ; chaque phase se termine pa
 ## Phase 1 — Fondations → `v0.1.0`
 
 - [x] **Étape 1.1** — Initialisation du dépôt, workspace Cargo, crate `core`, CI, documentation
-- [ ] **Étape 1.2** — Application Tauri 2 + React + TypeScript (Vite, TypeScript strict)
+- [x] **Étape 1.2** — Application Tauri 2 + React + TypeScript (Vite, TypeScript strict)
 - [ ] **Étape 1.3** — Système de design : variables CSS, typographie, composants de base
 - [ ] **Étape 1.4** — Coque applicative : barre latérale, en-tête, navigation, palette de commandes
 - [ ] **Étape 1.5** — Crate `storage` : SQLite, migrations, persistance des enquêtes

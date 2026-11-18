@@ -12,3 +12,4 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 - Workspace Cargo et crate `evidentyx-core` : validation des noms et descriptions d'enquête, cycle de vie des statuts (active / archivée), erreurs en français.
 - Intégration continue GitHub Actions : formatage, Clippy et tests sur Linux, Windows et macOS.
 - Documentation d'architecture, feuille de route et première décision technique (ADR 0001).
+- Application de bureau Tauri 2 + React 19 + TypeScript strict (Vite) dans `apps/desktop`, reliée à `evidentyx-core` par une première commande typée (`engine_info`) ; politique de sécurité du contenu stricte.
