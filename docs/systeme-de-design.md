@@ -47,6 +47,27 @@ Importés depuis `src/components/ui` :
 
 Les classes CSS des composants sont préfixées par `ui-` pour éviter les collisions. Classes utilitaires globales : `.mono` (données techniques), `.section-title` (titre en petites capitales), `.sr-only` (texte réservé aux lecteurs d'écran).
 
+## Coque applicative
+
+La coque (`src/shell`) structure toutes les pages :
+
+| Élément | Rôle |
+|---|---|
+| Barre latérale | Navigation par groupes. Page active : fond accentué et liseré gauche. Sections non disponibles grisées avec la mention « planifiée » et leur échéance en info-bulle. Repliable en barre d'icônes. |
+| En-tête | Titre de la page, accès à la palette, indicateur d'état du moteur. |
+| Palette de commandes | Recherche sans tenir compte des accents ni de la casse ; ↑ ↓ pour choisir, Entrée pour exécuter, Échap pour fermer. |
+
+Ajouter une page : déclarer son identifiant dans `PageId` et `PAGE_TITLES`, l'ajouter à `NAVIGATION` (`src/shell/navigation.ts`), puis la rendre dans `App.tsx`. Elle apparaît automatiquement dans la palette.
+
+### Raccourcis clavier
+
+| Raccourci | Action |
+|---|---|
+| Ctrl+K (⌘K sous macOS) | Ouvrir ou fermer la palette de commandes |
+| Ctrl+B (⌘B) | Replier ou déplier la barre latérale |
+
+Icônes : [Lucide](https://lucide.dev) (`lucide-react`, licence ISC), taille 16 px dans la navigation.
+
 ## Catalogue
 
 En développement, le catalogue affiche tous les jetons et composants, avec un sélecteur de thème :

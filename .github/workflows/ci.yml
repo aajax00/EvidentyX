@@ -40,6 +40,9 @@ jobs:
         run: |
           npm ci
           npm run build
+      - name: Tests de l'interface
+        working-directory: apps/desktop
+        run: npm test
       - name: Vérifier le formatage
         run: cargo fmt --all -- --check
       - name: Clippy
