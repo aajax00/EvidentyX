@@ -55,6 +55,7 @@ cargo test --workspace
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [Système de design](docs/systeme-de-design.md)
 - [Décisions techniques (ADR)](docs/decisions/)
 - [Contribuer](CONTRIBUTING.md)
 - [Politique de sécurité](SECURITY.md)

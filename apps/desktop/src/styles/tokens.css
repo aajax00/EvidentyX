@@ -1,0 +1,166 @@
+/*
+ * Jetons de design EVIDENTYX — seule source des valeurs visuelles.
+ *
+ * Esthétique « outil d'analyste » : surfaces graphite neutres, bordures fines
+ * de 1 px, angles droits (aucun arrondi), ombres quasi absentes. L'accent bleu
+ * acier est réservé au focus, à la sélection et aux liens ; l'action principale
+ * est un bouton clair sur fond sombre (inversé en thème clair).
+ *
+ * Thème sombre par défaut ; thème clair via <html data-theme="light">.
+ * Documentation : docs/systeme-de-design.md.
+ */
+
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Surfaces (du plus profond au plus élevé) */
+  --color-bg: #0d0e10;
+  --color-surface: #141518;
+  --color-surface-raised: #1a1c20;
+  --color-surface-hover: #22252a;
+  --color-surface-sunken: #0f1012;
+
+  /* Bordures */
+  --color-border: #25282d;
+  --color-border-strong: #353940;
+
+  /* Texte (le niveau « subtle » reste ≥ 4,5:1 sur les surfaces) */
+  --color-text: #e6e7e9;
+  --color-text-muted: #a2a6ad;
+  --color-text-subtle: #8a8f97;
+
+  /* Accent unique : focus, sélection, liens */
+  --color-accent: #809cf4;
+  --color-accent-hover: #96aef6;
+  --color-accent-subtle: rgb(128 156 244 / 0.14);
+  --color-text-on-accent: #0d0e10;
+
+  /* Action principale : bouton clair */
+  --color-primary: #e6e7e9;
+  --color-primary-hover: #ffffff;
+  --color-text-on-primary: #0d0e10;
+
+  /* États sémantiques */
+  --color-success: #4fb683;
+  --color-success-subtle: rgb(79 182 131 / 0.14);
+  --color-warning: #d8a443;
+  --color-warning-subtle: rgb(216 164 67 / 0.14);
+  --color-danger: #e4685f;
+  --color-danger-subtle: rgb(228 104 95 / 0.14);
+  --color-info: #5fb3d9;
+  --color-info-subtle: rgb(95 179 217 / 0.14);
+
+  /* Gravité des détections (phase 4) */
+  --color-severity-low: #5fb3d9;
+  --color-severity-medium: #d8a443;
+  --color-severity-high: #e8864a;
+  --color-severity-critical: #e4685f;
+
+  --color-focus: #809cf4;
+  --color-scrollbar: #2d3137;
+  --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.5);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --color-bg: #f3f4f5;
+  --color-surface: #ffffff;
+  --color-surface-raised: #f0f1f3;
+  --color-surface-hover: #e6e8eb;
+  --color-surface-sunken: #fafafb;
+
+  --color-border: #dddfe3;
+  --color-border-strong: #c3c7ce;
+
+  --color-text: #16181b;
+  --color-text-muted: #5a606a;
+  --color-text-subtle: #636973;
+
+  --color-accent: #3c5ad8;
+  --color-accent-hover: #334fc2;
+  --color-accent-subtle: rgb(60 90 216 / 0.1);
+  --color-text-on-accent: #ffffff;
+
+  --color-primary: #16181b;
+  --color-primary-hover: #2a2d32;
+  --color-text-on-primary: #ffffff;
+
+  --color-success: #1a7e4e;
+  --color-success-subtle: rgb(26 126 78 / 0.1);
+  --color-warning: #956700;
+  --color-warning-subtle: rgb(149 103 0 / 0.1);
+  --color-danger: #c63f39;
+  --color-danger-subtle: rgb(198 63 57 / 0.1);
+  --color-info: #0b6e99;
+  --color-info-subtle: rgb(11 110 153 / 0.1);
+
+  --color-severity-low: #0b6e99;
+  --color-severity-medium: #956700;
+  --color-severity-high: #b8540f;
+  --color-severity-critical: #c63f39;
+
+  --color-focus: #3c5ad8;
+  --color-scrollbar: #c5c9d0;
+  --shadow-pop: 0 8px 24px rgb(16 24 40 / 0.16);
+}
+
+:root {
+  /* — Typographie (polices embarquées, repli système) — */
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", "Cascadia Mono", "SF Mono", Consolas, ui-monospace, monospace;
+
+  --text-2xs: 0.65625rem; /* 10,5px — titres de section en capitales */
+  --text-xs: 0.6875rem; /* 11px */
+  --text-sm: 0.75rem; /* 12px */
+  --text-md: 0.8125rem; /* 13px — corps de texte */
+  --text-lg: 0.9375rem; /* 15px */
+  --text-xl: 1.125rem; /* 18px */
+  --text-2xl: 1.375rem; /* 22px */
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --tracking-caps: 0.07em;
+
+  /* — Espacements (grille de 4px) — */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* — Angles : droits partout (choix de design, aucun arrondi) — */
+  --radius: 0;
+
+  /* — Bordures — */
+  --border-width: 1px;
+
+  /* — Hauteurs de contrôles (compactes) — */
+  --control-sm: 24px;
+  --control-md: 30px;
+
+  /* — Animations discrètes — */
+  --duration-fast: 110ms;
+  --duration-normal: 160ms;
+  --ease-standard: ease;
+
+  /* — Plans — */
+  --z-dropdown: 100;
+  --z-overlay: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+
+  --focus-ring-width: 1px;
+}

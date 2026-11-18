@@ -1,0 +1,26 @@
+/* Indicateur de chargement carré (angles droits, cohérent avec le reste de l'interface) */
+.ui-spinner {
+  display: inline-block;
+  flex: none;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--radius);
+  animation: ui-spin 0.8s linear infinite;
+  opacity: 0.8;
+}
+
+.ui-spinner--sm {
+  width: 10px;
+  height: 10px;
+}
+
+.ui-spinner--md {
+  width: 14px;
+  height: 14px;
+}
+
+@keyframes ui-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
