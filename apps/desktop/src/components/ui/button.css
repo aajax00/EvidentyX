@@ -1,0 +1,76 @@
+.ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: var(--control-md);
+  padding: 0 var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+  user-select: none;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.ui-button--sm {
+  height: var(--control-sm);
+  padding: 0 var(--space-2);
+  font-size: var(--text-xs);
+}
+
+/* Secondaire : surface élevée, bordure fine */
+.ui-button--secondary:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-strong);
+}
+
+/* Principal : bouton clair (l'accent reste réservé à la sélection et au focus) */
+.ui-button--primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-on-primary);
+}
+.ui-button--primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+/* Discret : sans fond ni bordure */
+.ui-button--ghost {
+  background: transparent;
+  border-color: transparent;
+}
+.ui-button--ghost:hover:not(:disabled) {
+  background: var(--color-surface-raised);
+}
+
+/* Destructif : texte et bordure rouges, fond teinté au survol */
+.ui-button--danger {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--color-danger) 40%, transparent);
+  color: var(--color-danger);
+}
+.ui-button--danger:hover:not(:disabled) {
+  background: var(--color-danger-subtle);
+  border-color: var(--color-danger);
+}
+
+/* Bouton enfoncé (bascule) : marqué par l'accent */
+.ui-button[aria-pressed="true"] {
+  background: var(--color-accent-subtle);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.ui-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

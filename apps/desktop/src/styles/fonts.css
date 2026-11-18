@@ -1,0 +1,12 @@
+/*
+ * Polices embarquées dans l'application (aucun appel réseau, compatible avec
+ * la politique `font-src 'self'`) : IBM Plex Sans pour l'interface,
+ * IBM Plex Mono pour les données techniques. Licence SIL Open Font License 1.1.
+ * Sous-ensemble latin : couvre le français.
+ */
+@import "@fontsource/ibm-plex-sans/latin-400.css";
+@import "@fontsource/ibm-plex-sans/latin-500.css";
+@import "@fontsource/ibm-plex-sans/latin-600.css";
+@import "@fontsource/ibm-plex-sans/latin-700.css";
+@import "@fontsource/ibm-plex-mono/latin-400.css";
+@import "@fontsource/ibm-plex-mono/latin-500.css";

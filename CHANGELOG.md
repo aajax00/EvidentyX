@@ -13,3 +13,4 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 - Intégration continue GitHub Actions : formatage, Clippy et tests sur Linux, Windows et macOS.
 - Documentation d'architecture, feuille de route et première décision technique (ADR 0001).
 - Application de bureau Tauri 2 + React 19 + TypeScript strict (Vite) dans `apps/desktop`, reliée à `evidentyx-core` par une première commande typée (`engine_info`) ; politique de sécurité du contenu stricte.
+- Système de design inspiré de COSINT (graphite neutre, angles droits, bordures de 1 px, thème sombre par défaut, polices IBM Plex Sans et Mono embarquées) : jetons CSS (couleurs, typographie, espacements, thèmes sombre et clair), composants de base `Button`, `Badge`, `Panel`, `TextField`, `TextAreaField`, `Spinner`, et catalogue de développement (`#catalogue`).

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { getEngineInfo, isTauri, type EngineInfo } from "./api";
+import { Badge, Panel, Spinner } from "./components/ui";
+import "./app.css";
 
 type EngineState =
   | { kind: "loading" }
@@ -41,48 +43,59 @@ export function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <span className="brand">EVIDENTYX</span>
-        <span className="tagline">Chaque trace. Chaque connexion. Chaque vérité.</span>
+        <span className="app-brand">EVIDENTYX</span>
+        <span className="app-tagline">Chaque trace. Chaque connexion. Chaque vérité.</span>
       </header>
 
       <main className="app-main">
-        <section className="panel" aria-labelledby="engine-title">
-          <h2 id="engine-title">Moteur d'analyse</h2>
+        <Panel title="Moteur d'analyse" actions={<EngineBadge state={engine} />}>
           <EngineStatus state={engine} />
-        </section>
+        </Panel>
 
-        <section className="panel" aria-labelledby="roadmap-title">
-          <h2 id="roadmap-title">État du projet</h2>
-          <p className="muted">
+        <Panel title="État du projet">
+          <p className="app-muted">
             Version de développement : aucune fonctionnalité d'analyse n'est encore disponible.
           </p>
-          <ol className="phases">
+          <ol className="app-phases">
             {PHASES.map((phase, index) => (
               <li key={phase.name}>
                 <span>
                   {index + 1}. {phase.name}
                 </span>
-                <span className={`badge badge-${phase.state === "en cours" ? "active" : "planned"}`}>
-                  {phase.state}
-                </span>
+                <Badge tone={phase.state === "en cours" ? "accent" : "neutral"}>{phase.state}</Badge>
               </li>
             ))}
           </ol>
-        </section>
+        </Panel>
       </main>
     </div>
   );
 }
 
+function EngineBadge({ state }: { state: EngineState }) {
+  switch (state.kind) {
+    case "loading":
+      return <Badge>connexion…</Badge>;
+    case "ready":
+      return <Badge tone="success">connecté</Badge>;
+    case "unavailable":
+      return <Badge tone="danger">indisponible</Badge>;
+  }
+}
+
 function EngineStatus({ state }: { state: EngineState }) {
   switch (state.kind) {
     case "loading":
-      return <p className="muted">Connexion au moteur…</p>;
+      return (
+        <p className="app-inline">
+          <Spinner size="sm" label="Connexion au moteur" /> Connexion au moteur…
+        </p>
+      );
     case "unavailable":
-      return <p className="error">{state.reason}</p>;
+      return <p className="app-error">{state.reason}</p>;
     case "ready":
       return (
-        <dl className="facts">
+        <dl className="app-facts">
           <dt>Moteur</dt>
           <dd>evidentyx-core {state.info.engineVersion}</dd>
           <dt>Application</dt>
