@@ -53,6 +53,7 @@ EVIDENTYX suit le [versionnage sémantique](https://semver.org/lang/fr/) : `MAJE
 cargo fmt --all
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
+cd apps/desktop && npm test && npm run build
 ```
 
 ## Dépendances
