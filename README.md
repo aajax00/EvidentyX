@@ -27,15 +27,30 @@ Le détail est dans [`docs/feuille-de-route.md`](docs/feuille-de-route.md).
 
 ## Démarrage rapide (développeurs)
 
-Prérequis actuels : [Rust](https://rustup.rs) ≥ 1.80.
+Prérequis :
+
+- [Rust](https://rustup.rs) ≥ 1.80 ;
+- [Node.js](https://nodejs.org) ≥ 20.19 ;
+- les [dépendances système de Tauri](https://v2.tauri.app/start/prerequisites/). Sous Debian/Ubuntu :
+
+```bash
+sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev pkg-config
+```
+
+Lancer l'application en mode développement :
 
 ```bash
 git clone https://github.com/CHANGER-MOI/evidentyx.git
-cd evidentyx
-cargo test --workspace
+cd evidentyx/apps/desktop
+npm install
+npm run tauri dev
 ```
 
-Les prérequis Node.js et Tauri seront ajoutés avec l'application de bureau.
+Lancer les tests (l'interface doit avoir été construite une fois avec `npm run build`, car l'hôte Tauri l'embarque à la compilation) :
+
+```bash
+cargo test --workspace
+```
 
 ## Documentation
 

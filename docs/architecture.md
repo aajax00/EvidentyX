@@ -6,11 +6,11 @@
 
 ```
 ┌───────────────────────────────────────────────────────────┐
-│  Interface (React + TypeScript, système de design maison)  │  planifié
+│  Interface (React + TypeScript, système de design maison)  │  initialisée
 └──────────────────────────┬────────────────────────────────┘
                            │ commandes Tauri typées
 ┌──────────────────────────▼────────────────────────────────┐
-│  Hôte de bureau (Tauri 2, Rust)                           │  planifié
+│  Hôte de bureau (Tauri 2, Rust)                           │  initialisé
 └──────────────────────────┬────────────────────────────────┘
                            │ appels de bibliothèque
 ┌──────────────────────────▼────────────────────────────────┐
@@ -37,6 +37,7 @@
 | Crate | Rôle | État |
 |---|---|---|
 | `evidentyx-core` | Types de domaine partagés, validation, erreurs | ✅ Initialisé |
+| `evidentyx-desktop` (`apps/desktop/src-tauri`) | Hôte Tauri : expose le moteur à l'interface par des commandes typées, sans logique métier | ✅ Initialisé |
 | `evidentyx-storage` | Persistance SQLite, migrations, journal d'audit | ⚪ Planifié (phase 1) |
 | `evidentyx-parser` | Analyseurs de formats (JSON, CSV, Syslog, Apache, Nginx, PCAP, EVTX) | ⚪ Phase 2 |
 | `evidentyx-normalizer` | Conversion vers le modèle d'événement canonique | ⚪ Phase 2-3 |
