@@ -15,7 +15,7 @@ EVIDENTYX combine un moteur d'analyse en Rust et une interface de bureau Tauri 2
 4. **`unsafe` interdit** dans tout le workspace (`unsafe_code = "forbid"`).
 5. **Langue** : code en anglais ; documentation, interface, messages d'erreur utilisateur et messages de commit en français.
 6. **Versionnage** : SemVer, Conventional Commits, Keep a Changelog, étiquettes annotées `vX.Y.Z`, une version mineure par phase.
-7. **MSRV** : Rust 1.80, vérifiée en CI à terme.
+7. **MSRV** : Rust 1.80, vérifiée en CI à terme. *(Remplacé par l'[ADR 0002](0002-stockage-sqlite.md) : Rust 1.90.)*
 
 ## Conséquences
 

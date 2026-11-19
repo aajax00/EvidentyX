@@ -29,7 +29,7 @@ Le détail est dans [`docs/feuille-de-route.md`](docs/feuille-de-route.md).
 
 Prérequis :
 
-- [Rust](https://rustup.rs) ≥ 1.80 ;
+- [Rust](https://rustup.rs) ≥ 1.90 ;
 - [Node.js](https://nodejs.org) ≥ 20.19 ;
 - les [dépendances système de Tauri](https://v2.tauri.app/start/prerequisites/). Sous Debian/Ubuntu :
 

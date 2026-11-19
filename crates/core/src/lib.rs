@@ -13,7 +13,10 @@ pub mod error;
 pub mod investigation;
 
 pub use error::CoreError;
-pub use investigation::{InvestigationDescription, InvestigationName, InvestigationStatus};
+pub use investigation::{
+    Investigation, InvestigationDescription, InvestigationId, InvestigationName,
+    InvestigationStatus, Timestamp,
+};
 
 /// Version du moteur, exposée à l'interface et inscrite dans les rapports.
 pub const ENGINE_VERSION: &str = env!("CARGO_PKG_VERSION");
