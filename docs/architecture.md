@@ -37,7 +37,7 @@
 | Crate | Rôle | État |
 |---|---|---|
 | `evidentyx-core` | Types de domaine partagés, validation, erreurs | ✅ Initialisé |
-| `evidentyx-desktop` (`apps/desktop/src-tauri`) | Hôte Tauri : expose le moteur à l'interface par des commandes typées, sans logique métier | ✅ Initialisé |
+| `evidentyx-desktop` (`apps/desktop/src-tauri`) | Hôte Tauri : ouvre la base locale, expose le moteur et les enquêtes à l'interface par des commandes typées, sans logique métier | ✅ Enquêtes |
 | `evidentyx-storage` | Persistance SQLite, migrations versionnées, enquêtes (journal d'audit : phase 4) | ✅ Initialisé |
 | `evidentyx-parser` | Analyseurs de formats (JSON, CSV, Syslog, Apache, Nginx, PCAP, EVTX) | ⚪ Phase 2 |
 | `evidentyx-normalizer` | Conversion vers le modèle d'événement canonique | ⚪ Phase 2-3 |
@@ -49,6 +49,20 @@
 | `evidentyx-report` | Exports PDF, JSON, CSV | ⚪ Phase 4 |
 
 Les crates ne sont créés qu'au moment où ils contiennent du code réel.
+
+## Commandes Tauri
+
+| Commande | Rôle |
+|---|---|
+| `engine_info` | Versions du moteur et de l'application, plateforme |
+| `storage_info` | Chemin de la base, version du schéma, erreur d'ouverture éventuelle |
+| `list_investigations` | Liste filtrée (statut, texte) et triée |
+| `get_investigation` | Détail d'une enquête |
+| `create_investigation`, `rename_investigation`, `update_investigation_description` | Création et modification (validation par `evidentyx-core`) |
+| `set_investigation_status` | Archivage, réactivation |
+| `delete_investigation` | Suppression définitive |
+
+Les erreurs sont renvoyées sous la forme `{ code, message, field? }` : `code` est stable (`validation`, `not_found`, `archived_read_only`…), `message` est en français, `field` désigne le champ de formulaire concerné. La base `evidentyx.sqlite` se trouve dans le dossier de données de l'application (par exemple `~/.local/share/org.evidentyx.desktop/` sous Linux).
 
 ## Conventions linguistiques
 

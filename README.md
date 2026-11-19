@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/assets/logo.png" alt="Logo EVIDENTYX" width="280"></p>
+
 # EVIDENTYX
 
 **Plateforme d'investigation numérique et de reconstruction d'incidents**

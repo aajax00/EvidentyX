@@ -70,3 +70,80 @@
   opacity: 0.5;
   cursor: default;
 }
+
+/* ——— Liste déroulante ——— */
+.ui-select {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ui-select__label {
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+  white-space: nowrap;
+}
+
+.ui-select__control {
+  position: relative;
+  display: inline-flex;
+}
+
+.ui-select__input {
+  appearance: none;
+  padding-right: var(--space-6);
+  cursor: pointer;
+}
+
+.ui-select__chevron {
+  position: absolute;
+  right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-subtle);
+  pointer-events: none;
+}
+
+/* ——— Recherche ——— */
+.ui-search {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+}
+
+.ui-search__icon {
+  position: absolute;
+  left: var(--space-2);
+  color: var(--color-text-subtle);
+  pointer-events: none;
+}
+
+.ui-search__input {
+  padding-left: calc(var(--space-2) + 20px);
+  padding-right: calc(var(--space-2) + 20px);
+}
+
+.ui-search__input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.ui-search__clear {
+  position: absolute;
+  right: var(--space-1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius);
+  color: var(--color-text-subtle);
+  cursor: pointer;
+}
+
+.ui-search__clear:hover {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
+}

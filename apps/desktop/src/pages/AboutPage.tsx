@@ -1,5 +1,6 @@
 import { Panel, Spinner } from "../components/ui";
 import { useEngine } from "../engine";
+import { BrandLogo } from "../shell/BrandLogo";
 
 const PRINCIPLES: ReadonlyArray<[string, string]> = [
   ["Déterministe", "Aucune IA générative : une même entrée et les mêmes règles produisent toujours le même résultat."],
@@ -13,6 +14,15 @@ export function AboutPage() {
 
   return (
     <div className="page">
+      <section className="about-hero">
+        <BrandLogo className="about-hero__logo" />
+        <div>
+          <h2 className="about-hero__title">EVIDENTYX</h2>
+          <p className="text-muted">Plateforme d'investigation numérique et de reconstruction d'incidents.</p>
+          <p className="about-hero__motto">Chaque trace. Chaque connexion. Chaque vérité.</p>
+        </div>
+      </section>
+
       <Panel title="Versions">
         {engine.kind === "loading" && (
           <p className="page-inline">

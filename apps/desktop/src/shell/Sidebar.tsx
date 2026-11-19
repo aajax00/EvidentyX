@@ -1,22 +1,39 @@
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { FileSearch, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { cx } from "../components/ui/cx";
-import { NAVIGATION, type NavItem, type PageId } from "./navigation";
+import { useInvestigations } from "../investigations/InvestigationsProvider";
+import { BrandLogo, BrandMark } from "./BrandLogo";
+import { NAVIGATION, type NavItem, type SectionId } from "./navigation";
+import { sectionOf, useRouter } from "./router";
 
 export interface SidebarProps {
-  current: PageId;
   collapsed: boolean;
-  onNavigate: (page: PageId) => void;
   onToggleCollapsed: () => void;
 }
 
-export function Sidebar({ current, collapsed, onNavigate, onToggleCollapsed }: SidebarProps) {
+/** Nombre d'enquêtes récentes listées sous la navigation. */
+const RECENT_COUNT = 5;
+
+export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
+  const { route, navigate } = useRouter();
+  const { all } = useInvestigations();
+  const current = sectionOf(route);
+  const openId = route.page === "investigation" ? route.id : null;
+  const recent = all.filter((i) => i.status === "active").slice(0, RECENT_COUNT);
+
   return (
     <aside className={cx("shell-sidebar", collapsed && "shell-sidebar--collapsed")}>
       <div className="shell-sidebar__brand">
-        <span className="shell-sidebar__logo" aria-hidden="true">
-          EX
-        </span>
-        {!collapsed && <span className="shell-sidebar__name">EVIDENTYX</span>}
+        {collapsed ? (
+          <BrandMark size={30} />
+        ) : (
+          <>
+            <BrandLogo className="shell-sidebar__logo" />
+            <span className="shell-sidebar__wordmark">
+              <span className="shell-sidebar__name">EVIDENTYX</span>
+              <span className="shell-sidebar__tag">Investigation numérique</span>
+            </span>
+          </>
+        )}
       </div>
 
       <nav className="shell-sidebar__nav" aria-label="Navigation principale">
@@ -26,12 +43,39 @@ export function Sidebar({ current, collapsed, onNavigate, onToggleCollapsed }: S
             <ul>
               {group.items.map((item) => (
                 <li key={item.label}>
-                  <NavEntry item={item} current={current} collapsed={collapsed} onNavigate={onNavigate} />
+                  <NavEntry
+                    item={item}
+                    current={current}
+                    collapsed={collapsed}
+                    onNavigate={(page) => navigate({ page })}
+                  />
                 </li>
               ))}
             </ul>
           </div>
         ))}
+
+        {!collapsed && recent.length > 0 && (
+          <div className="shell-nav-group">
+            <p className="shell-nav-group__label section-title">Récentes</p>
+            <ul>
+              {recent.map((inv) => (
+                <li key={inv.id}>
+                  <button
+                    type="button"
+                    className={cx("shell-nav-item", "shell-nav-item--recent", openId === inv.id && "shell-nav-item--active")}
+                    aria-current={openId === inv.id ? "page" : undefined}
+                    title={inv.name}
+                    onClick={() => navigate({ page: "investigation", id: inv.id })}
+                  >
+                    <FileSearch size={14} aria-hidden="true" />
+                    <span className="shell-nav-item__label">{inv.name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </nav>
 
       <button
@@ -55,9 +99,9 @@ function NavEntry({
   onNavigate,
 }: {
   item: NavItem;
-  current: PageId;
+  current: SectionId;
   collapsed: boolean;
-  onNavigate: (page: PageId) => void;
+  onNavigate: (page: SectionId) => void;
 }) {
   const Icon = item.icon;
 

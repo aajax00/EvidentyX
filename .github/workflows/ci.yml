@@ -32,12 +32,15 @@ jobs:
         run: cargo fmt --all -- --check
       - uses: Swatinem/rust-cache@v2
       - name: Dépendances système Tauri
-        # Le miroir apt peut se bloquer : délai borné et nouvelles tentatives.
-        timeout-minutes: 8
+        # Habituellement 25 à 40 s ; le miroir apt est parfois très lent, d'où
+        # un délai large, des nouvelles tentatives et des délais réseau bornés.
+        # (Un cache de paquets .deb a été essayé : il ne restaure pas tous les
+        # liens de bibliothèques nécessaires à l'édition de liens de WebKitGTK.)
+        timeout-minutes: 20
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          APT_OPTS="-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30"
+          APT_OPTS="-o Acquire::Retries=5 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30"
           sudo apt-get $APT_OPTS update
           sudo apt-get $APT_OPTS install -y --no-install-recommends \
             libwebkit2gtk-4.1-dev libxdo-dev libayatana-appindicator3-dev librsvg2-dev pkg-config
