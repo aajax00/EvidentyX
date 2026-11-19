@@ -61,6 +61,7 @@ Importés depuis `src/components/ui` :
 | `Select` | Liste déroulante native avec libellé en ligne | `label`, `options`, `value`, `onChange` |
 | `SearchField` | Recherche avec icône et effacement (Échap) | `label`, `value`, `onChange` |
 | `EmptyState` | État vide : pourquoi et quoi faire | `icon`, `title`, `action` |
+| `Switch` | Interrupteur marche/arrêt (rôle `switch`), carré, avec libellé et description | `label`, `description`, `checked`, `onChange` |
 | `ToastProvider` / `useToast` | Notifications brèves (5 s, `aria-live`) | `notify(message, tone)` |
 
 Les classes CSS des composants sont préfixées par `ui-` pour éviter les collisions. Classes utilitaires globales : `.mono` (données techniques), `.section-title` (titre en petites capitales), `.sr-only` (texte réservé aux lecteurs d'écran).
@@ -80,12 +81,12 @@ Ajouter une page : déclarer sa route dans `Route` (`src/shell/router.tsx`), son
 
 ## Animations
 
-Sobres et brèves ; toutes désactivées si le système demande moins d'animations (`prefers-reduced-motion`).
+Sobres et brèves ; toutes désactivées si le système demande moins d'animations (`prefers-reduced-motion`). L'écran d'ouverture et l'arrière-plan se désactivent aussi dans les Paramètres.
 
 | Animation | Où | Durée |
 |---|---|---|
 | Écran d'ouverture : le logo se décode en ASCII (caractères brouillés qui se fixent de gauche à droite), puis le logo réel apparaît | Lancement de l'application (`src/motion/SplashScreen.tsx`) ; un clic ou une touche le passe | ~2,4 s |
-| Fond ASCII : grille de caractères hexadécimaux qui changent lentement, traversée par une bande plus claire | Bandeau d'accueil (`src/motion/AsciiField.tsx`), 10 images/s, en pause fenêtre masquée | continue |
+| Arrière-plan : points carrés qui dérivent lentement et se relient quand ils se rapprochent | Derrière toute l'interface, visible entre les panneaux (`src/motion/NetworkBackground.tsx`), 30 images/s, en pause fenêtre masquée | continue |
 | Ouverture des boîtes de dialogue et de la palette | Fondu et léger déplacement | 160–180 ms |
 | Changement de page | Fondu et montée de 6 px | 160 ms |
 

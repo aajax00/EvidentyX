@@ -10,7 +10,7 @@ Chaque étape correspond à un ou plusieurs commits ; chaque phase se termine pa
 - [x] **Étape 1.4** — Coque applicative : barre latérale, en-tête, navigation, palette de commandes
 - [x] **Étape 1.5** — Crate `storage` : SQLite, migrations, persistance des enquêtes
 - [x] **Étape 1.6** — Gestion des enquêtes : création, ouverture, renommage, archivage, suppression, recherche, tri
-- [ ] **Étape 1.7** — Vue d'ensemble (données de démonstration clairement étiquetées) et paramètres
+- [x] **Étape 1.7** — Vue d'ensemble (données de démonstration clairement étiquetées) et paramètres
 - [ ] **Étape 1.8** — Empaquetage : workflow de publication GitHub (AppImage, DEB, MSI/EXE, DMG non signés)
 - [ ] **Version `v0.1.0`**
 

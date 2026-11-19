@@ -10,7 +10,10 @@ use crate::error::{Result, StorageError};
 use rusqlite::Connection;
 
 /// Migrations ordonnées : (version atteinte, script SQL).
-const MIGRATIONS: &[(i64, &str)] = &[(1, include_str!("../migrations/0001_enquetes.sql"))];
+const MIGRATIONS: &[(i64, &str)] = &[
+    (1, include_str!("../migrations/0001_enquetes.sql")),
+    (2, include_str!("../migrations/0002_reglages.sql")),
+];
 
 /// Version de schéma la plus récente connue de ce code.
 pub const LATEST_SCHEMA_VERSION: i64 = MIGRATIONS[MIGRATIONS.len() - 1].0;

@@ -20,10 +20,26 @@
   min-width: 0;
 }
 
-.shell-content {
+/* Zone de contenu : animation d'arrière-plan fixe, pages défilantes au-dessus */
+.shell-stage {
+  position: relative;
   flex: 1;
-  overflow: auto;
+  min-height: 0;
   background: var(--color-bg);
+}
+
+.shell-stage__background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.shell-content {
+  position: relative;
+  height: 100%;
+  overflow: auto;
 }
 
 /* ——— Barre latérale ——— */
@@ -97,6 +113,7 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-width: thin;
   padding: var(--space-2) 0;
 }
 
@@ -504,5 +521,43 @@ button.shell-nav-item--active:hover {
   from {
     opacity: 0;
     transform: translateY(-6px) scale(0.985);
+  }
+}
+
+/* ——— Corrections d'affichage ——— */
+
+/* Barre de défilement fine dans la navigation : ne recouvre plus les libellés */
+.shell-sidebar__nav::-webkit-scrollbar {
+  width: 5px;
+}
+
+/* Contour de focus tracé à l'intérieur des éléments placés dans une zone
+   défilante (sinon il est rogné par le bord de la zone) */
+.shell-nav-item:focus-visible,
+.shell-sidebar__toggle:focus-visible,
+.shell-palette__item:focus-visible {
+  outline-offset: -2px;
+}
+
+/* Texte tronqué : hauteur de ligne suffisante pour ne pas couper les jambages (g, p, ç) */
+.shell-breadcrumb__current,
+.shell-nav-item__label {
+  line-height: 1.5;
+}
+
+/* Barre d'état : jamais de débordement horizontal */
+.shell-statusbar {
+  overflow: hidden;
+}
+
+.shell-statusbar__item {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 1100px) {
+  .shell-statusbar__item--secondary {
+    display: none;
   }
 }
