@@ -120,11 +120,24 @@ jobs:
             ⚠️ Version de développement, paquets **non signés** : Windows (SmartScreen) et macOS (Gatekeeper) afficheront un avertissement à l'installation. Voir la [procédure d'installation](https://github.com/${{ github.repository }}/blob/main/docs/installation.md).
           releaseDraft: true
           prerelease: ${{ startsWith(github.ref_name, 'v0.') }}
-          uploadWorkflowArtifacts: true
-          # [bundle] et [ext] distinguent les fichiers d'une même plateforme
-          # (AppImage et DEB, installateur EXE et archive NSIS, MSI…).
-          workflowArtifactNamePattern: "evidentyx-[platform]-[arch]-[bundle][ext]"
           # Pas de mise à jour automatique : fichiers de l'updater non publiés.
           uploadUpdaterJson: false
           uploadUpdaterSignatures: false
           retryAttempts: 1
+
+      # Un artefact par plateforme, avec tous ses paquets (essai à blanc ou
+      # étiquette). L'envoi d'artefacts intégré à tauri-action échouait sous
+      # Windows sur des conflits de noms.
+      - name: Joindre les paquets au workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidentyx-${{ matrix.name }}
+          if-no-files-found: error
+          compression-level: 0
+          path: |
+            target/**/release/bundle/appimage/*.AppImage
+            target/**/release/bundle/deb/*.deb
+            target/**/release/bundle/rpm/*.rpm
+            target/**/release/bundle/msi/*.msi
+            target/**/release/bundle/nsis/*-setup.exe
+            target/**/release/bundle/dmg/*.dmg
