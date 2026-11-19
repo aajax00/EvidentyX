@@ -24,11 +24,12 @@ import { Badge, Button, EmptyState, Panel, Spinner, TextAreaField, useToast } fr
 import { formatDateTime, formatRelative } from "../format";
 import { useInvestigations } from "../investigations/InvestigationsProvider";
 import { StatusBadge } from "../investigations/StatusBadge";
+import { EvidencePanel } from "../evidence/EvidencePanel";
 import { OverviewPanel } from "../overview/OverviewPanel";
 import { useRouter } from "../shell/router";
 
 const MODULES: ReadonlyArray<{ icon: LucideIcon; name: string; text: string; plannedFor: string }> = [
-  { icon: HardDriveUpload, name: "Preuves", text: "Import de journaux et captures réseau, empreintes SHA-256.", plannedFor: "phase 2" },
+  { icon: HardDriveUpload, name: "Analyse des preuves", text: "Lecture des journaux et captures réseau, événements extraits.", plannedFor: "phase 2" },
   { icon: Activity, name: "Chronologie", text: "Événements normalisés, triés et filtrables.", plannedFor: "phase 3" },
   { icon: Network, name: "Graphe", text: "Entités et relations reconstituées.", plannedFor: "phase 3" },
   { icon: ShieldAlert, name: "Détections", text: "Règles versionnées et explicables.", plannedFor: "phase 4" },
@@ -142,6 +143,8 @@ export function InvestigationPage({ id }: { id: number }) {
           refresh();
         }}
       />
+
+      <EvidencePanel investigationId={investigation.id} readOnly={archived} />
 
       <OverviewPanel investigationId={investigation.id} />
 
