@@ -5,9 +5,13 @@ import { useInvestigations } from "../investigations/InvestigationsProvider";
 import { BrandLogo } from "../shell/BrandLogo";
 import { useRouter } from "../shell/router";
 
-const PHASES: ReadonlyArray<{ name: string; content: string; state: "en cours" | "planifiée" }> = [
-  { name: "Fondations", content: "Application, design, enquêtes, stockage", state: "en cours" },
-  { name: "Ingestion", content: "JSON, CSV, Syslog, Apache/Nginx, PCAP, SHA-256", state: "planifiée" },
+type PhaseState = "terminée" | "prochaine" | "planifiée";
+
+const PHASE_TONES = { terminée: "success", prochaine: "accent", planifiée: "neutral" } as const;
+
+const PHASES: ReadonlyArray<{ name: string; content: string; state: PhaseState }> = [
+  { name: "Fondations", content: "Application, design, enquêtes, stockage", state: "terminée" },
+  { name: "Ingestion", content: "JSON, CSV, Syslog, Apache/Nginx, PCAP, SHA-256", state: "prochaine" },
   { name: "Moteur d'enquête", content: "Normalisation, chronologie, corrélation, graphe", state: "planifiée" },
   { name: "Détection et rapports", content: "Règles, coffre de preuves, exports", state: "planifiée" },
   { name: "Stabilisation", content: "Tests, sécurité, performances, paquets", state: "planifiée" },
@@ -116,7 +120,7 @@ export function HomePage() {
                   <span className="page-phases__name">{phase.name}</span>
                   <span className="page-phases__content">{phase.content}</span>
                 </span>
-                <Badge tone={phase.state === "en cours" ? "accent" : "neutral"}>{phase.state}</Badge>
+                <Badge tone={PHASE_TONES[phase.state]}>{phase.state}</Badge>
               </li>
             ))}
           </ol>

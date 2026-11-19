@@ -12,11 +12,22 @@ Chaque étape correspond à un ou plusieurs commits ; chaque phase se termine pa
 - [x] **Étape 1.6** — Gestion des enquêtes : création, ouverture, renommage, archivage, suppression, recherche, tri
 - [x] **Étape 1.7** — Vue d'ensemble (données de démonstration clairement étiquetées) et paramètres
 - [x] **Étape 1.8** — Empaquetage : workflow de publication GitHub (AppImage, DEB, MSI/EXE, DMG non signés)
-- [ ] **Version `v0.1.0`**
+- [x] **Version `v0.1.0`** — 2026-11-19
 
 ## Phase 2 — Ingestion → `v0.2.0`
 
-Modèle d'événement canonique · JSON · CSV · Syslog RFC 3164/5424 · Apache/Nginx · PCAP/PCAPNG · progression, annulation, rapport d'import · SHA-256.
+Objectif : importer des preuves dans une enquête et en extraire des événements traçables, sans jamais modifier les fichiers sources.
+
+- [ ] **Étape 2.1** — Crate `evidence` : enregistrement d'une preuve dans une enquête (chemin, taille, dates), empreinte SHA-256 calculée en flux, vérification d'intégrité ; fichiers ouverts en lecture seule, jamais copiés en base
+- [ ] **Étape 2.2** — Modèle d'événement canonique : horodatage UTC avec précision et incertitude, référence à la source (preuve, décalage, ligne ou paquet), champs normalisés (hôte, adresses, utilisateur, action, résultat), champs bruts conservés ; stockage des événements (ADR)
+- [ ] **Étape 2.3** — Crate `parser` : cadre commun (détection du format, lecture en flux, erreurs par ligne sans interrompre l'import), JSON et JSON Lines
+- [ ] **Étape 2.4** — CSV : séparateur et en-têtes détectés, choix des colonnes d'horodatage
+- [ ] **Étape 2.5** — Syslog RFC 3164 et RFC 5424
+- [ ] **Étape 2.6** — Journaux d'accès Apache et Nginx (formats common et combined)
+- [ ] **Étape 2.7** — PCAP et PCAPNG : paquets, flux réseau de base (adresses, ports, protocoles)
+- [ ] **Étape 2.8** — Import dans l'application : sélection ou glisser-déposer, progression, annulation, rapport d'import (lignes lues, retenues, ignorées, erreurs)
+- [ ] **Étape 2.9** — Vue d'ensemble réelle : les statistiques de l'enquête remplacent les données de démonstration
+- [ ] **Version `v0.2.0`**
 
 ## Phase 3 — Moteur d'enquête → `v0.3.0`
 
