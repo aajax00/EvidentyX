@@ -803,10 +803,12 @@ name = "evidentyx-desktop"
 version = "0.0.1"
 dependencies = [
  "evidentyx-core",
+ "evidentyx-storage",
  "serde",
  "serde_json",
  "tauri",
  "tauri-build",
+ "tempfile",
 ]
 
 [[package]]

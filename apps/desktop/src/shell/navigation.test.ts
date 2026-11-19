@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { NAVIGATION, PAGE_TITLES, availablePages } from "./navigation";
+import { NAVIGATION, SECTION_TITLES, availablePages } from "./navigation";
 
 describe("navigation", () => {
   it("chaque page disponible a un titre", () => {
     for (const item of availablePages()) {
-      expect(PAGE_TITLES[item.page]).toBeTruthy();
+      expect(SECTION_TITLES[item.page]).toBeTruthy();
     }
   });
 

@@ -6,15 +6,16 @@ import {
   Activity,
   FileText,
   FolderSearch,
-  Home,
+  House,
   Info,
   Network,
   Settings,
   ShieldAlert,
   type LucideIcon,
 } from "lucide-react";
+import type { PageId } from "./router";
 
-export type PageId = "home" | "about";
+export type SectionId = Exclude<PageId, "investigation">;
 
 interface NavItemBase {
   label: string;
@@ -23,7 +24,9 @@ interface NavItemBase {
 
 export interface AvailableNavItem extends NavItemBase {
   kind: "page";
-  page: PageId;
+  page: SectionId;
+  /** Raccourci clavier éventuel (format de shortcuts.ts). */
+  shortcut?: string;
 }
 
 export interface PlannedNavItem extends NavItemBase {
@@ -42,12 +45,14 @@ export interface NavGroup {
 export const NAVIGATION: readonly NavGroup[] = [
   {
     label: "Général",
-    items: [{ kind: "page", page: "home", label: "Accueil", icon: Home }],
+    items: [
+      { kind: "page", page: "home", label: "Accueil", icon: House },
+      { kind: "page", page: "investigations", label: "Enquêtes", icon: FolderSearch },
+    ],
   },
   {
-    label: "Enquête",
+    label: "Analyse",
     items: [
-      { kind: "planned", label: "Enquêtes", icon: FolderSearch, plannedFor: "étape 1.6" },
       { kind: "planned", label: "Chronologie", icon: Activity, plannedFor: "phase 3" },
       { kind: "planned", label: "Graphe", icon: Network, plannedFor: "phase 3" },
       { kind: "planned", label: "Détections", icon: ShieldAlert, plannedFor: "phase 4" },
@@ -63,9 +68,10 @@ export const NAVIGATION: readonly NavGroup[] = [
   },
 ];
 
-/** Titre affiché dans l'en-tête pour chaque page. */
-export const PAGE_TITLES: Record<PageId, string> = {
+/** Titre de chaque section dans l'en-tête. */
+export const SECTION_TITLES: Record<SectionId, string> = {
   home: "Accueil",
+  investigations: "Enquêtes",
   about: "À propos",
 };
 

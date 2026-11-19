@@ -3,13 +3,22 @@
 // Exclu de la version publiée (voir main.tsx).
 
 import { useState, type FormEvent } from "react";
+import { Archive, FolderSearch, Pencil, Plus, Trash2 } from "lucide-react";
 import {
   Badge,
   Button,
+  Dialog,
+  EmptyState,
+  IconButton,
   Panel,
+  SearchField,
+  SegmentedControl,
+  Select,
   Spinner,
   TextAreaField,
   TextField,
+  ToastProvider,
+  useToast,
   type BadgeTone,
   type ButtonVariant,
 } from "../components/ui";
@@ -39,20 +48,25 @@ const COLORS = [
   "severity-high",
   "severity-critical",
 ];
-type Theme = "dark" | "light";
 
 export function DesignCatalog() {
-  const [theme, setTheme] = useState<Theme>("dark");
+  return (
+    <ToastProvider>
+      <Catalog />
+    </ToastProvider>
+  );
+}
+
+function Catalog() {
+  const { notify } = useToast();
+  const [segment, setSegment] = useState<"a" | "b" | "c">("a");
+  const [sortValue, setSortValue] = useState<"x" | "y">("x");
+  const [search, setSearch] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [clicks, setClicks] = useState(0);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [submitted, setSubmitted] = useState<string | null>(null);
-
-  function applyTheme(next: Theme) {
-    setTheme(next);
-    if (next === "dark") document.documentElement.removeAttribute("data-theme");
-    else document.documentElement.setAttribute("data-theme", next);
-  }
 
   function simulateLoading() {
     setLoading(true);
@@ -71,19 +85,6 @@ export function DesignCatalog() {
       <header className="catalog__header">
         <h1>Catalogue du système de design</h1>
         <Badge tone="warning">outil de développement</Badge>
-        <div className="catalog__themes" role="group" aria-label="Thème">
-          {(["dark", "light"] as const).map((t) => (
-            <Button
-              key={t}
-              size="sm"
-              variant="secondary"
-              aria-pressed={theme === t}
-              onClick={() => applyTheme(t)}
-            >
-              {t === "dark" ? "Sombre" : "Clair"}
-            </Button>
-          ))}
-        </div>
       </header>
 
       <Panel title="Couleurs">
@@ -132,6 +133,78 @@ export function DesignCatalog() {
             Désactivé
           </Button>
         </div>
+      </Panel>
+
+      <Panel title="Boutons avec icône">
+        <div className="catalog__row">
+          <Button variant="primary" icon={Plus} onClick={() => setClicks((n) => n + 1)}>
+            Nouvelle enquête
+          </Button>
+          <Button icon={Pencil} onClick={() => setClicks((n) => n + 1)}>
+            Renommer
+          </Button>
+          <Button variant="danger" icon={Trash2} onClick={() => setClicks((n) => n + 1)}>
+            Supprimer
+          </Button>
+          <IconButton icon={Pencil} label="Renommer" onClick={() => setClicks((n) => n + 1)} />
+          <IconButton icon={Archive} label="Archiver" onClick={() => setClicks((n) => n + 1)} />
+          <IconButton icon={Trash2} label="Supprimer" variant="danger" onClick={() => setClicks((n) => n + 1)} />
+        </div>
+      </Panel>
+
+      <Panel title="Filtres">
+        <div className="catalog__row">
+          <div style={{ width: 280 }}>
+            <SearchField label="Recherche" placeholder="Rechercher…" value={search} onChange={setSearch} />
+          </div>
+          <SegmentedControl
+            label="Statut"
+            value={segment}
+            onChange={setSegment}
+            options={[
+              { value: "a", label: "Actives", count: 12 },
+              { value: "b", label: "Archivées", count: 3 },
+              { value: "c", label: "Toutes", count: 15 },
+            ]}
+          />
+          <Select
+            label="Trier par"
+            value={sortValue}
+            onChange={setSortValue}
+            options={[
+              { value: "x", label: "Dernière modification" },
+              { value: "y", label: "Nom (A → Z)" },
+            ]}
+          />
+        </div>
+      </Panel>
+
+      <Panel title="Dialogue, notifications, état vide">
+        <div className="catalog__row">
+          <Button onClick={() => setDialogOpen(true)}>Ouvrir un dialogue</Button>
+          <Button onClick={() => notify("Opération réussie (démonstration).")}>Notification</Button>
+          <Button onClick={() => notify("Échec de l'opération (démonstration).", "danger")}>Notification d'erreur</Button>
+        </div>
+        <EmptyState icon={FolderSearch} title="Aucun élément">
+          Explique pourquoi la liste est vide et propose quoi faire.
+        </EmptyState>
+        {dialogOpen && (
+          <Dialog
+            title="Titre du dialogue"
+            description="Texte d'introduction du dialogue."
+            onClose={() => setDialogOpen(false)}
+            footer={
+              <>
+                <Button onClick={() => setDialogOpen(false)}>Annuler</Button>
+                <Button variant="primary" onClick={() => setDialogOpen(false)}>
+                  Confirmer
+                </Button>
+              </>
+            }
+          >
+            Contenu du dialogue.
+          </Dialog>
+        )}
       </Panel>
 
       <Panel title="Badges et indicateurs">

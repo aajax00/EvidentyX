@@ -1,9 +1,16 @@
-/* Coque applicative : barre latérale | (en-tête + contenu). */
+/* Coque applicative : [barre latérale | (en-tête + contenu)] puis barre d'état. */
 
 .shell {
   display: flex;
+  flex-direction: column;
   height: 100%;
   overflow: hidden;
+}
+
+.shell-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
 }
 
 .shell-main {
@@ -16,6 +23,7 @@
 .shell-content {
   flex: 1;
   overflow: auto;
+  background: var(--color-bg);
 }
 
 /* ——— Barre latérale ——— */
@@ -24,7 +32,7 @@
   display: flex;
   flex-direction: column;
   flex: none;
-  width: 216px;
+  width: 228px;
   background: var(--color-surface);
   border-right: var(--border-width) solid var(--color-border);
   transition: width var(--duration-normal) var(--ease-standard);
@@ -35,34 +43,54 @@
 }
 
 .shell-sidebar__brand {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  height: 44px;
+  height: 56px;
   padding: 0 var(--space-3);
   border-bottom: var(--border-width) solid var(--color-border);
   flex: none;
+  overflow: hidden;
+}
+
+.shell-sidebar--collapsed .shell-sidebar__brand {
+  justify-content: center;
+  padding: 0;
 }
 
 .shell-sidebar__logo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 58px;
   flex: none;
-  background: var(--color-primary);
-  color: var(--color-text-on-primary);
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-bold);
+}
+
+.shell-sidebar__wordmark {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
 }
 
 .shell-sidebar__name {
   font-size: var(--text-sm);
   font-weight: var(--weight-bold);
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   white-space: nowrap;
+}
+
+.shell-sidebar__tag {
+  font-size: var(--text-2xs);
+  color: var(--color-text-subtle);
+  white-space: nowrap;
+}
+
+/* ——— Logo ——— */
+
+.brand-logo,
+.brand-mark {
+  display: block;
+  height: auto;
+  user-select: none;
 }
 
 .shell-sidebar__nav {
@@ -154,6 +182,11 @@ button.shell-nav-item--active:hover {
   text-overflow: ellipsis;
 }
 
+.shell-nav-item--recent {
+  height: 26px;
+  font-size: var(--text-xs);
+}
+
 .shell-nav-item__planned {
   font-size: var(--text-2xs);
   text-transform: uppercase;
@@ -189,20 +222,52 @@ button.shell-nav-item--active:hover {
 /* ——— En-tête ——— */
 
 .shell-header {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  height: 44px;
-  padding: 0 var(--space-4);
+  height: 56px;
+  padding: 0 var(--space-5);
   flex: none;
   background: var(--color-surface);
   border-bottom: var(--border-width) solid var(--color-border);
 }
 
-.shell-header__title {
+.shell-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.shell-breadcrumb__link {
+  padding: 2px var(--space-1);
+  margin-left: calc(-1 * var(--space-1));
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius);
+  color: var(--color-text-muted);
   font-size: var(--text-md);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.shell-breadcrumb__link:hover {
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+}
+
+.shell-breadcrumb__sep {
+  flex: none;
+  color: var(--color-text-subtle);
+}
+
+.shell-breadcrumb__current {
+  font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .shell-header__palette {
@@ -221,7 +286,8 @@ button.shell-nav-item--active:hover {
   cursor: pointer;
 }
 
-.shell-header__palette:hover {
+.shell-header__palette:hover,
+.shell-header__palette:focus-visible {
   border-color: var(--color-border-strong);
   color: var(--color-text-muted);
 }
@@ -234,27 +300,66 @@ button.shell-nav-item--active:hover {
   white-space: nowrap;
 }
 
-.shell-engine {
+/* ——— Bandeau du mode démonstration ——— */
+
+.shell-demo-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-4);
+  background: var(--color-warning-subtle);
+  border-bottom: var(--border-width) solid color-mix(in srgb, var(--color-warning) 35%, transparent);
+  color: var(--color-warning);
+  font-size: var(--text-xs);
+  flex: none;
+}
+
+/* ——— Barre d'état ——— */
+
+.shell-statusbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: 24px;
+  padding: 0 var(--space-3);
+  flex: none;
+  background: var(--color-surface);
+  border-top: var(--border-width) solid var(--color-border);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-text-subtle);
+}
+
+.shell-statusbar__spacer {
+  flex: 1;
+}
+
+.shell-statusbar__item {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
   white-space: nowrap;
 }
 
-.shell-engine__dot {
-  width: 7px;
-  height: 7px;
+.shell-statusbar__dot {
+  width: 6px;
+  height: 6px;
   background: var(--color-text-subtle);
 }
 
-.shell-engine--success .shell-engine__dot {
+.shell-statusbar__item--success .shell-statusbar__dot {
   background: var(--color-success);
 }
 
-.shell-engine--danger .shell-engine__dot {
+.shell-statusbar__item--warning .shell-statusbar__dot {
+  background: var(--color-warning);
+}
+
+.shell-statusbar__item--danger {
+  color: var(--color-danger);
+}
+
+.shell-statusbar__item--danger .shell-statusbar__dot {
   background: var(--color-danger);
 }
 
@@ -291,13 +396,13 @@ button.shell-nav-item--active:hover {
   justify-content: center;
   align-items: flex-start;
   padding-top: 12vh;
-  background: rgb(4 5 7 / 0.6);
+  background: rgb(4 6 10 / 0.62);
 }
 
 .shell-palette {
   display: flex;
   flex-direction: column;
-  width: min(560px, calc(100vw - 32px));
+  width: min(580px, calc(100vw - 32px));
   max-height: 60vh;
   background: var(--color-surface);
   border: var(--border-width) solid var(--color-border-strong);
