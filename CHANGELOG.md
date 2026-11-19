@@ -24,9 +24,10 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 - Interface : page Enquêtes, page de détail d'une enquête, accueil avec statistiques et enquêtes récentes, fil d'Ariane, barre d'état (moteur, base, nombre d'enquêtes), enquêtes récentes dans la barre latérale, palette enrichie (nouvelle enquête, ouverture d'une enquête), raccourci Ctrl+N / ⌘N.
 - Composants : `Dialog`, `IconButton`, boutons avec icône, `SegmentedControl`, `Select`, `SearchField`, `EmptyState`, notifications (`ToastProvider`).
 - Identité visuelle : logo intégré en bleu (barre latérale, accueil, À propos, icônes de l'application) ; palette sombre et sobre, accent unique au bleu du logo ; thème sombre uniquement (le thème clair est retiré).
+- Animations : écran d'ouverture (le logo se décode en ASCII puis apparaît, passable au clic ou au clavier), fond ASCII animé discret sur l'accueil, ouverture des boîtes de dialogue, de la palette et des pages en fondu. Toutes désactivées si le système demande moins d'animations ; fenêtre de fond sombre dès son ouverture (pas de flash blanc).
 - Mode démonstration pour le développement dans un navigateur (moteur en mémoire, signalé à l'écran, exclu de la version publiée).
 
 ### Modifié
 
 - Version minimale de Rust relevée de 1.80 à 1.90, exigée par Tauri 2.11 et `rusqlite` (ADR 0002).
-- Intégration continue : un seul job Linux (formatage, Clippy, tests) au lieu de deux, délais maximum sur les jobs et sur l'installation des paquets système, nouvelles tentatives apt.
+- Intégration continue : un seul job Linux (formatage, Clippy, tests) au lieu de deux, délais maximum sur les jobs et sur l'installation des paquets système (20 min), nouvelles tentatives apt.

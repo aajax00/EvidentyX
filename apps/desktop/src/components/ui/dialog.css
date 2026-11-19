@@ -61,3 +61,25 @@
 .ui-dialog__description + .ui-dialog__footer {
   margin-top: var(--space-4);
 }
+
+/* Ouverture : fondu et léger déplacement ; fond assombri en fondu */
+.ui-dialog[open] {
+  animation: ui-dialog-in 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.ui-dialog[open]::backdrop {
+  animation: ui-backdrop-in 180ms ease;
+}
+
+@keyframes ui-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@keyframes ui-backdrop-in {
+  from {
+    opacity: 0;
+  }
+}

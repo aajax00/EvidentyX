@@ -3,6 +3,7 @@ import { Badge, Button, EmptyState, Panel, Spinner } from "../components/ui";
 import { formatRelative } from "../format";
 import { useInvestigations } from "../investigations/InvestigationsProvider";
 import { BrandLogo } from "../shell/BrandLogo";
+import { AsciiField } from "../motion/AsciiField";
 import { useRouter } from "../shell/router";
 
 const PHASES: ReadonlyArray<{ name: string; content: string; state: "en cours" | "planifiée" }> = [
@@ -28,6 +29,7 @@ export function HomePage() {
   return (
     <div className="page">
       <section className="hero">
+        <AsciiField className="hero__ascii" />
         <BrandLogo className="hero__logo" />
         <div className="hero__body">
           <p className="hero__eyebrow">Plateforme d'investigation numérique</p>

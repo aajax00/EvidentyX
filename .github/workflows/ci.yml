@@ -32,19 +32,18 @@ jobs:
         run: cargo fmt --all -- --check
       - uses: Swatinem/rust-cache@v2
       - name: Dépendances système Tauri
-        # Les paquets .deb sont mis en cache GitHub : seul le premier run (ou un
-        # changement de liste) les télécharge depuis le miroir apt, parfois très
-        # lent. Les runs suivants les restaurent en quelques secondes.
-        uses: awalsh128/cache-apt-pkgs-action@v1.6.3
+        # Habituellement 25 à 40 s ; le miroir apt est parfois très lent, d'où
+        # un délai large, des nouvelles tentatives et des délais réseau bornés.
+        # (Un cache de paquets .deb a été essayé : il ne restaure pas tous les
+        # liens de bibliothèques nécessaires à l'édition de liens de WebKitGTK.)
         timeout-minutes: 20
-        with:
-          packages: libwebkit2gtk-4.1-dev libxdo-dev libayatana-appindicator3-dev librsvg2-dev pkg-config
-          version: tauri-1
-          execute_install_scripts: true
-      # Paquets restaurés depuis le cache : rafraîchit le cache de l'éditeur de
-      # liens dynamique pour que les tests trouvent les bibliothèques WebKitGTK.
-      - name: Rafraîchir les bibliothèques partagées
-        run: sudo ldconfig
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          APT_OPTS="-o Acquire::Retries=5 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30"
+          sudo apt-get $APT_OPTS update
+          sudo apt-get $APT_OPTS install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev libxdo-dev libayatana-appindicator3-dev librsvg2-dev pkg-config
       - uses: actions/setup-node@v4
         with:
           node-version: 22

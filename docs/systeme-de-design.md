@@ -78,6 +78,19 @@ La coque (`src/shell`) structure toutes les pages :
 
 Ajouter une page : déclarer sa route dans `Route` (`src/shell/router.tsx`), son titre dans `SECTION_TITLES` et son entrée dans `NAVIGATION` (`src/shell/navigation.ts`), puis la rendre dans `App.tsx`. Elle apparaît automatiquement dans la palette.
 
+## Animations
+
+Sobres et brèves ; toutes désactivées si le système demande moins d'animations (`prefers-reduced-motion`).
+
+| Animation | Où | Durée |
+|---|---|---|
+| Écran d'ouverture : le logo se décode en ASCII (caractères brouillés qui se fixent de gauche à droite), puis le logo réel apparaît | Lancement de l'application (`src/motion/SplashScreen.tsx`) ; un clic ou une touche le passe | ~2,4 s |
+| Fond ASCII : grille de caractères hexadécimaux qui changent lentement, traversée par une bande plus claire | Bandeau d'accueil (`src/motion/AsciiField.tsx`), 10 images/s, en pause fenêtre masquée | continue |
+| Ouverture des boîtes de dialogue et de la palette | Fondu et léger déplacement | 160–180 ms |
+| Changement de page | Fondu et montée de 6 px | 160 ms |
+
+Le logo ASCII (`src/assets/logoAscii.ts`) est généré depuis `docs/assets/logo.png` par `python3 scripts/generate-ascii-logo.py` (dans `apps/desktop`, nécessite Pillow).
+
 ## Mode démonstration
 
 Dans un navigateur (`npm run dev`, sans l'hôte Tauri), les commandes sont servies par un moteur en mémoire (`src/dev/mockBackend.ts`) avec quelques enquêtes fictives suffixées « (démo) ». Un bandeau et la barre d'état le signalent. Ce mode n'existe pas dans la version publiée ; la référence des règles reste le moteur Rust.

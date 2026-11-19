@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { ToastProvider } from "./components/ui";
 import { EngineProvider } from "./engine";
+import { SplashScreen } from "./motion/SplashScreen";
+import { useReducedMotion } from "./motion/useReducedMotion";
 import { InvestigationsProvider } from "./investigations/InvestigationsProvider";
 import { AboutPage } from "./pages/AboutPage";
 import { HomePage } from "./pages/HomePage";
@@ -10,8 +13,13 @@ import { RouterProvider, useRouter } from "./shell/router";
 import "./pages/pages.css";
 
 export function App() {
+  const reducedMotion = useReducedMotion();
+  // Écran d'ouverture affiché une fois au lancement (sauf si les animations sont réduites).
+  const [splash, setSplash] = useState(() => !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
   return (
     <EngineProvider>
+      {splash && !reducedMotion && <SplashScreen onDone={() => setSplash(false)} />}
       <ToastProvider>
         <RouterProvider>
           <InvestigationsProvider>
