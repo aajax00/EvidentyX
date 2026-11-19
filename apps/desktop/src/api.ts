@@ -124,3 +124,24 @@ export function setInvestigationStatus(id: number, status: InvestigationStatus):
 export function deleteInvestigation(id: number): Promise<void> {
   return call("delete_investigation", { id });
 }
+
+// ——— Réglages ———
+
+export type StatusFilter = InvestigationStatus | "all";
+
+/** Miroir de `SettingsDto` (src-tauri/src/settings.rs). */
+export interface Settings {
+  splashScreen: boolean;
+  backgroundAnimation: boolean;
+  sidebarCollapsed: boolean;
+  defaultSort: InvestigationSort;
+  defaultStatusFilter: StatusFilter;
+}
+
+export function getSettings(): Promise<Settings> {
+  return call("get_settings");
+}
+
+export function updateSettings(settings: Settings): Promise<Settings> {
+  return call("update_settings", { settings });
+}

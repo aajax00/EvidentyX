@@ -24,7 +24,11 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 - Interface : page Enquêtes, page de détail d'une enquête, accueil avec statistiques et enquêtes récentes, fil d'Ariane, barre d'état (moteur, base, nombre d'enquêtes), enquêtes récentes dans la barre latérale, palette enrichie (nouvelle enquête, ouverture d'une enquête), raccourci Ctrl+N / ⌘N.
 - Composants : `Dialog`, `IconButton`, boutons avec icône, `SegmentedControl`, `Select`, `SearchField`, `EmptyState`, notifications (`ToastProvider`).
 - Identité visuelle : logo intégré en bleu (barre latérale, accueil, À propos, icônes de l'application) ; palette sombre et sobre, accent unique au bleu du logo ; thème sombre uniquement (le thème clair est retiré).
-- Animations : écran d'ouverture (le logo se décode en ASCII puis apparaît, passable au clic ou au clavier), fond ASCII animé discret sur l'accueil, ouverture des boîtes de dialogue, de la palette et des pages en fondu. Toutes désactivées si le système demande moins d'animations ; fenêtre de fond sombre dès son ouverture (pas de flash blanc).
+- Animations : écran d'ouverture (le logo se décode en ASCII puis apparaît, passable au clic ou au clavier), animation d'arrière-plan discrète (réseau de points reliés) derrière toute l'interface, ouverture des boîtes de dialogue, de la palette et des pages en fondu. Toutes désactivées si le système demande moins d'animations ; fenêtre de fond sombre dès son ouverture (pas de flash blanc).
+- Paramètres, enregistrés dans la base locale : écran d'ouverture, animation d'arrière-plan, barre latérale repliée au démarrage, tri et statut par défaut de la liste des enquêtes ; informations sur les données et liste des raccourcis clavier (migration 0002, `AppSettings` dans `evidentyx-core`, commandes `get_settings` / `update_settings`).
+- Vue d'ensemble d'une enquête (événements, sources, entités, alertes, activité sur 24 h, principales sources, alertes par gravité), illustrée par des données de démonstration déterministes et étiquetées comme telles jusqu'à l'import de preuves (phase 2).
+- Composant `Switch` (interrupteur).
+- Corrections d'affichage : contours de focus rognés dans les zones défilantes, jambages coupés dans les textes tronqués, barre de défilement de la navigation recouvrant les libellés, colonne « Créée » masquée en fenêtre étroite, barre d'état sans débordement.
 - Mode démonstration pour le développement dans un navigateur (moteur en mémoire, signalé à l'écran, exclu de la version publiée).
 
 ### Modifié

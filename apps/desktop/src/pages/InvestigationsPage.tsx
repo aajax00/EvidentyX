@@ -6,15 +6,15 @@ import {
   type CommandError,
   type Investigation,
   type InvestigationSort,
-  type InvestigationStatus,
+  type StatusFilter,
 } from "../api";
 import { Button, EmptyState, IconButton, SearchField, SegmentedControl, Select, Spinner } from "../components/ui";
 import { formatDateTime, formatRelative } from "../format";
 import { useInvestigations } from "../investigations/InvestigationsProvider";
 import { StatusBadge } from "../investigations/StatusBadge";
+import { useSettings } from "../settings/SettingsProvider";
 import { useRouter } from "../shell/router";
 
-type StatusFilter = InvestigationStatus | "all";
 
 const SORT_OPTIONS: ReadonlyArray<{ value: InvestigationSort; label: string }> = [
   { value: "updated_desc", label: "Dernière modification" },
@@ -25,10 +25,11 @@ const SORT_OPTIONS: ReadonlyArray<{ value: InvestigationSort; label: string }> =
 export function InvestigationsPage() {
   const { all, revision, openCreate, openRename, openDelete, toggleArchive } = useInvestigations();
   const { navigate } = useRouter();
-  const [status, setStatus] = useState<StatusFilter>("active");
+  const { settings } = useSettings();
+  const [status, setStatus] = useState<StatusFilter>(settings.defaultStatusFilter);
   const [text, setText] = useState("");
   const [debouncedText, setDebouncedText] = useState("");
-  const [sort, setSort] = useState<InvestigationSort>("updated_desc");
+  const [sort, setSort] = useState<InvestigationSort>(settings.defaultSort);
   const [items, setItems] = useState<Investigation[] | null>(null);
   const [error, setError] = useState<CommandError | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -157,7 +158,7 @@ export function InvestigationsPage() {
                   <th scope="col" className="data-table__date">
                     Modifiée
                   </th>
-                  <th scope="col" className="data-table__date">
+                  <th scope="col" className="data-table__date data-table__col-created">
                     Créée
                   </th>
                   <th scope="col" className="data-table__actions">
@@ -191,7 +192,7 @@ export function InvestigationsPage() {
                     <td className="data-table__muted" title={formatDateTime(inv.updatedAt)}>
                       {formatRelative(inv.updatedAt)}
                     </td>
-                    <td className="data-table__muted mono">{formatDateTime(inv.createdAt)}</td>
+                    <td className="data-table__muted mono data-table__col-created">{formatDateTime(inv.createdAt)}</td>
                     <td>
                       <div className="data-table__row-actions">
                         <IconButton

@@ -44,7 +44,7 @@ export function StatusBar() {
       <span className="shell-statusbar__item">
         {all.length} enquête{all.length > 1 ? "s" : ""}
       </span>
-      <span className="shell-statusbar__item">Hors ligne · aucune télémétrie</span>
+      <span className="shell-statusbar__item shell-statusbar__item--secondary">Hors ligne · aucune télémétrie</span>
     </footer>
   );
 }

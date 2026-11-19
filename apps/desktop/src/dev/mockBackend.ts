@@ -5,7 +5,7 @@
 // Les règles reproduites ici sont volontairement minimales : la référence est
 // le moteur Rust (evidentyx-core, evidentyx-storage). Exclu de la version publiée.
 
-import type { Investigation, InvestigationQuery, StorageInfo } from "../api";
+import type { Investigation, InvestigationQuery, Settings, StorageInfo } from "../api";
 
 const DAY = 86_400_000;
 const now = Date.now();
@@ -36,6 +36,14 @@ const investigations: Investigation[] = [
     updatedAt: now - 40 * DAY,
   },
 ];
+
+let settings: Settings = {
+  splashScreen: true,
+  backgroundAnimation: true,
+  sidebarCollapsed: false,
+  defaultSort: "updated_desc",
+  defaultStatusFilter: "active",
+};
 
 const fail = (code: string, message: string, field?: string): never => {
   throw { code, message, ...(field ? { field } : {}) };
@@ -74,8 +82,13 @@ export async function mockInvoke<T>(command: string, args: Record<string, unknow
   await new Promise((r) => setTimeout(r, 80));
   const result = ((): unknown => {
     switch (command) {
+      case "get_settings":
+        return { ...settings };
+      case "update_settings":
+        settings = { ...(args.settings as Settings) };
+        return { ...settings };
       case "storage_info":
-        return { path: "mémoire du navigateur (démonstration)", schemaVersion: 1, error: null } satisfies StorageInfo;
+        return { path: "mémoire du navigateur (démonstration)", schemaVersion: 2, error: null } satisfies StorageInfo;
       case "list_investigations": {
         const q = (args.query ?? {}) as InvestigationQuery;
         const terms = fold(q.text ?? "").split(" ").filter(Boolean);

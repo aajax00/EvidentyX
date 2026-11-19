@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { FlaskConical } from "lucide-react";
 import { isDemoMode } from "../api";
 import { useInvestigations } from "../investigations/InvestigationsProvider";
+import { NetworkBackground } from "../motion/NetworkBackground";
+import { useReducedMotion } from "../motion/useReducedMotion";
+import { useSettings } from "../settings/SettingsProvider";
 import { CommandPalette } from "./CommandPalette";
 import type { Command } from "./commands";
 import { Header } from "./Header";
@@ -23,7 +26,11 @@ const PALETTE_INVESTIGATIONS = 20;
 export function AppShell({ children }: { children: ReactNode }) {
   const { navigate } = useRouter();
   const { all, openCreate } = useInvestigations();
-  const [collapsed, setCollapsed] = useState(false);
+  const { settings } = useSettings();
+  // Valeur initiale tirée des réglages ; modifiable ensuite pendant la session.
+  const [collapsed, setCollapsed] = useState(settings.sidebarCollapsed);
+  const reducedMotion = useReducedMotion();
+  const animatedBackground = settings.backgroundAnimation && !reducedMotion;
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   const toggleCollapsed = useCallback(() => setCollapsed((c) => !c), []);
@@ -100,7 +107,10 @@ export function AppShell({ children }: { children: ReactNode }) {
               enregistrées.
             </p>
           )}
-          <main className="shell-content">{children}</main>
+          <div className="shell-stage">
+            {animatedBackground && <NetworkBackground className="shell-stage__background" />}
+            <main className="shell-content">{children}</main>
+          </div>
         </div>
       </div>
       <StatusBar />

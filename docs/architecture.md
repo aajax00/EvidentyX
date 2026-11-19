@@ -61,6 +61,7 @@ Les crates ne sont créés qu'au moment où ils contiennent du code réel.
 | `create_investigation`, `rename_investigation`, `update_investigation_description` | Création et modification (validation par `evidentyx-core`) |
 | `set_investigation_status` | Archivage, réactivation |
 | `delete_investigation` | Suppression définitive |
+| `get_settings`, `update_settings` | Lecture et enregistrement des réglages (validation par `evidentyx-core`) |
 
 Les erreurs sont renvoyées sous la forme `{ code, message, field? }` : `code` est stable (`validation`, `not_found`, `archived_read_only`…), `message` est en français, `field` désigne le champ de formulaire concerné. La base `evidentyx.sqlite` se trouve dans le dossier de données de l'application (par exemple `~/.local/share/org.evidentyx.desktop/` sous Linux).
 
