@@ -66,7 +66,13 @@ jobs:
         with:
           targets: ${{ matrix.name == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
+      # Cache des dépendances compilées, enregistré même si le job échoue :
+      # seule la première construction part de zéro.
       - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> target"
+          shared-key: publication
+          cache-on-failure: true
 
       - name: Dépendances système Tauri
         if: matrix.name == 'Linux'
