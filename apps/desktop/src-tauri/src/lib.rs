@@ -4,7 +4,13 @@
 //! typées. Aucune règle métier ne doit y vivre : elle appartient aux crates
 //! du workspace (`evidentyx-core`, etc.).
 
+mod error;
+mod investigations;
+mod state;
+
 use serde::Serialize;
+use state::AppState;
+use tauri::Manager;
 
 /// Informations de version affichées par l'interface.
 ///
@@ -35,7 +41,25 @@ fn engine_info() -> EngineInfo {
 /// Point d'entrée de l'application de bureau.
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![engine_info])
+        .setup(|app| {
+            // Base locale dans le dossier de données de l'application
+            // (ex. ~/.local/share/org.evidentyx.desktop sous Linux).
+            let dir = app.path().app_data_dir()?;
+            std::fs::create_dir_all(&dir)?;
+            app.manage(AppState::open(dir.join("evidentyx.sqlite")));
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            engine_info,
+            state::storage_info,
+            investigations::list_investigations,
+            investigations::get_investigation,
+            investigations::create_investigation,
+            investigations::rename_investigation,
+            investigations::update_investigation_description,
+            investigations::set_investigation_status,
+            investigations::delete_investigation,
+        ])
         .run(tauri::generate_context!())
         .expect("échec du démarrage de l'application EVIDENTYX");
 }

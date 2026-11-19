@@ -14,12 +14,6 @@
   flex-wrap: wrap;
 }
 
-.catalog__themes {
-  display: flex;
-  gap: var(--space-1);
-  margin-left: auto;
-}
-
 .catalog__row {
   display: flex;
   align-items: center;

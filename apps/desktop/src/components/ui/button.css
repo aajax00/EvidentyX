@@ -32,7 +32,7 @@
   border-color: var(--color-border-strong);
 }
 
-/* Principal : bouton clair (l'accent reste réservé à la sélection et au focus) */
+/* Principal : bleu du logo */
 .ui-button--primary {
   background: var(--color-primary);
   border-color: var(--color-primary);
@@ -73,4 +73,26 @@
 .ui-button:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+/* Bouton icône : carré */
+.ui-icon-button {
+  padding: 0;
+  width: var(--control-md);
+}
+
+.ui-icon-button.ui-button--sm {
+  width: var(--control-sm);
+}
+
+.ui-icon-button.ui-button--ghost {
+  color: var(--color-text-muted);
+}
+
+.ui-icon-button.ui-button--ghost:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
+.ui-icon-button.ui-button--danger {
+  border-color: transparent;
 }

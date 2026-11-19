@@ -1,44 +1,43 @@
-import { Search } from "lucide-react";
-import { useEngine } from "../engine";
+import { ChevronRight, Search } from "lucide-react";
+import { useInvestigations } from "../investigations/InvestigationsProvider";
 import { Kbd } from "./Kbd";
+import { SECTION_TITLES } from "./navigation";
+import { sectionOf, useRouter } from "./router";
 
 export interface HeaderProps {
-  title: string;
   onOpenPalette: () => void;
 }
 
-export function Header({ title, onOpenPalette }: HeaderProps) {
+export function Header({ onOpenPalette }: HeaderProps) {
+  const { route, navigate } = useRouter();
+  const { all } = useInvestigations();
+  const section = sectionOf(route);
+  const openName =
+    route.page === "investigation" ? (all.find((i) => i.id === route.id)?.name ?? `Enquête #${route.id}`) : null;
+
   return (
     <header className="shell-header">
-      <h1 className="shell-header__title">{title}</h1>
+      <nav className="shell-breadcrumb" aria-label="Fil d'Ariane">
+        {openName ? (
+          <>
+            <button type="button" className="shell-breadcrumb__link" onClick={() => navigate({ page: section })}>
+              {SECTION_TITLES[section]}
+            </button>
+            <ChevronRight size={14} aria-hidden="true" className="shell-breadcrumb__sep" />
+            <h1 className="shell-breadcrumb__current" aria-current="page">
+              {openName}
+            </h1>
+          </>
+        ) : (
+          <h1 className="shell-breadcrumb__current">{SECTION_TITLES[section]}</h1>
+        )}
+      </nav>
 
       <button type="button" className="shell-header__palette" onClick={onOpenPalette}>
         <Search size={14} aria-hidden="true" />
         <span>Rechercher une commande…</span>
         <Kbd shortcut="mod+k" />
       </button>
-
-      <EngineIndicator />
     </header>
-  );
-}
-
-function EngineIndicator() {
-  const engine = useEngine();
-  const { tone, text } =
-    engine.kind === "ready"
-      ? { tone: "success", text: `Moteur ${engine.info.engineVersion}` }
-      : engine.kind === "loading"
-        ? { tone: "neutral", text: "Moteur : connexion…" }
-        : { tone: "danger", text: "Moteur indisponible" };
-  return (
-    <span
-      className={`shell-engine shell-engine--${tone}`}
-      role="status"
-      title={engine.kind === "unavailable" ? engine.reason : undefined}
-    >
-      <span className="shell-engine__dot" aria-hidden="true" />
-      {text}
-    </span>
   );
 }
