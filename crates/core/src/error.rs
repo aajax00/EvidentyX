@@ -20,6 +20,8 @@ pub enum CoreError {
         from: &'static str,
         to: &'static str,
     },
+    /// Modification refusée : l'enquête est archivée (lecture seule).
+    ArchivedReadOnly,
 }
 
 impl fmt::Display for CoreError {
@@ -42,6 +44,10 @@ impl fmt::Display for CoreError {
             Self::InvalidTransition { from, to } => write!(
                 f,
                 "transition de statut interdite : « {from} » vers « {to} »"
+            ),
+            Self::ArchivedReadOnly => write!(
+                f,
+                "l'enquête est archivée : réactivez-la avant de la modifier"
             ),
         }
     }

@@ -20,7 +20,7 @@
 └──────────────────────────┬────────────────────────────────┘
                            │
                 ┌──────────▼──────────┐
-                │  SQLite (local)     │  planifié
+                │  SQLite (local)     │  initialisé
                 └─────────────────────┘
 ```
 
@@ -38,7 +38,7 @@
 |---|---|---|
 | `evidentyx-core` | Types de domaine partagés, validation, erreurs | ✅ Initialisé |
 | `evidentyx-desktop` (`apps/desktop/src-tauri`) | Hôte Tauri : expose le moteur à l'interface par des commandes typées, sans logique métier | ✅ Initialisé |
-| `evidentyx-storage` | Persistance SQLite, migrations, journal d'audit | ⚪ Planifié (phase 1) |
+| `evidentyx-storage` | Persistance SQLite, migrations versionnées, enquêtes (journal d'audit : phase 4) | ✅ Initialisé |
 | `evidentyx-parser` | Analyseurs de formats (JSON, CSV, Syslog, Apache, Nginx, PCAP, EVTX) | ⚪ Phase 2 |
 | `evidentyx-normalizer` | Conversion vers le modèle d'événement canonique | ⚪ Phase 2-3 |
 | `evidentyx-evidence` | Hachage SHA-256, vérification d'intégrité | ⚪ Phase 2 |

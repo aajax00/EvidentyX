@@ -132,6 +132,65 @@ impl fmt::Display for InvestigationStatus {
     }
 }
 
+/// Identifiant d'une enquête, attribué par le stockage.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct InvestigationId(i64);
+
+impl InvestigationId {
+    pub const fn new(value: i64) -> Self {
+        Self(value)
+    }
+
+    pub const fn get(self) -> i64 {
+        self.0
+    }
+}
+
+impl fmt::Display for InvestigationId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+/// Instant UTC, en millisecondes depuis l'époque Unix (1970-01-01T00:00:00Z).
+///
+/// Représentation volontairement simple et sans dépendance : tri, comparaison
+/// et stockage SQLite directs. La mise en forme lisible relève de l'interface.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Timestamp(i64);
+
+impl Timestamp {
+    pub const fn from_unix_millis(millis: i64) -> Self {
+        Self(millis)
+    }
+
+    pub const fn unix_millis(self) -> i64 {
+        self.0
+    }
+}
+
+/// Enquête : unité de travail regroupant les preuves d'un incident.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Investigation {
+    pub id: InvestigationId,
+    pub name: InvestigationName,
+    pub description: InvestigationDescription,
+    pub status: InvestigationStatus,
+    pub created_at: Timestamp,
+    pub updated_at: Timestamp,
+}
+
+impl Investigation {
+    /// Vérifie que l'enquête peut être modifiée : une enquête archivée est en
+    /// lecture seule jusqu'à sa réactivation.
+    pub fn ensure_editable(&self) -> Result<(), CoreError> {
+        match self.status {
+            InvestigationStatus::Active => Ok(()),
+            InvestigationStatus::Archived => Err(CoreError::ArchivedReadOnly),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -202,6 +261,29 @@ mod tests {
         assert_eq!(Active.transition_to(Archived), Ok(Archived));
         assert_eq!(Archived.transition_to(Active), Ok(Active));
         assert!(Active.transition_to(Active).is_err());
+    }
+
+    fn sample(status: InvestigationStatus) -> Investigation {
+        Investigation {
+            id: InvestigationId::new(1),
+            name: InvestigationName::parse("Test").unwrap(),
+            description: InvestigationDescription::default(),
+            status,
+            created_at: Timestamp::from_unix_millis(0),
+            updated_at: Timestamp::from_unix_millis(0),
+        }
+    }
+
+    #[test]
+    fn enquete_archivee_en_lecture_seule() {
+        assert_eq!(
+            sample(InvestigationStatus::Active).ensure_editable(),
+            Ok(())
+        );
+        assert_eq!(
+            sample(InvestigationStatus::Archived).ensure_editable(),
+            Err(CoreError::ArchivedReadOnly)
+        );
     }
 
     #[test]
