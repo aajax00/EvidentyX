@@ -121,6 +121,10 @@ jobs:
           releaseDraft: true
           prerelease: ${{ startsWith(github.ref_name, 'v0.') }}
           uploadWorkflowArtifacts: true
-          # [bundle] distingue les paquets d'une même plateforme (AppImage et DEB, EXE et MSI).
-          workflowArtifactNamePattern: "evidentyx-[platform]-[arch]-[bundle]"
+          # [bundle] et [ext] distinguent les fichiers d'une même plateforme
+          # (AppImage et DEB, installateur EXE et archive NSIS, MSI…).
+          workflowArtifactNamePattern: "evidentyx-[platform]-[arch]-[bundle][ext]"
+          # Pas de mise à jour automatique : fichiers de l'updater non publiés.
+          uploadUpdaterJson: false
+          uploadUpdaterSignatures: false
           retryAttempts: 1
