@@ -22,6 +22,10 @@ pub enum CoreError {
     },
     /// Modification refusée : l'enquête est archivée (lecture seule).
     ArchivedReadOnly,
+    /// Empreinte SHA-256 mal formée.
+    InvalidDigest,
+    /// Statut d'intégrité inconnu.
+    UnknownIntegrityStatus(String),
 }
 
 impl fmt::Display for CoreError {
@@ -45,6 +49,13 @@ impl fmt::Display for CoreError {
                 f,
                 "transition de statut interdite : « {from} » vers « {to} »"
             ),
+            Self::InvalidDigest => write!(
+                f,
+                "empreinte SHA-256 invalide (64 caractères hexadécimaux attendus)"
+            ),
+            Self::UnknownIntegrityStatus(value) => {
+                write!(f, "statut d'intégrité inconnu : « {value} »")
+            }
             Self::ArchivedReadOnly => write!(
                 f,
                 "l'enquête est archivée : réactivez-la avant de la modifier"

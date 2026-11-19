@@ -5,6 +5,7 @@
 //! du workspace (`evidentyx-core`, etc.).
 
 mod error;
+mod evidence;
 mod investigations;
 mod settings;
 mod state;
@@ -42,6 +43,7 @@ fn engine_info() -> EngineInfo {
 /// Point d'entrée de l'application de bureau.
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             // Base locale dans le dossier de données de l'application
             // (ex. ~/.local/share/org.evidentyx.desktop sous Linux).
@@ -62,6 +64,10 @@ pub fn run() {
             investigations::delete_investigation,
             settings::get_settings,
             settings::update_settings,
+            evidence::list_evidence,
+            evidence::add_evidence,
+            evidence::verify_evidence,
+            evidence::remove_evidence,
         ])
         .run(tauri::generate_context!())
         .expect("échec du démarrage de l'application EVIDENTYX");

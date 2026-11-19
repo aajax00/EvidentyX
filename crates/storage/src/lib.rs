@@ -9,12 +9,14 @@
 
 mod clock;
 mod error;
+mod evidence;
 mod investigations;
 mod migrations;
 mod settings;
 
 pub use clock::{Clock, SystemClock};
 pub use error::{Result, StorageError};
+pub use evidence::NewEvidence;
 pub use migrations::LATEST_SCHEMA_VERSION;
 
 use rusqlite::Connection;
