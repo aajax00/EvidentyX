@@ -1,0 +1,119 @@
+name: Publication
+
+# Une étiquette vX.Y.Z construit les paquets des trois plateformes et les joint
+# à une publication GitHub en brouillon, à relire puis publier à la main.
+# Lancement manuel (onglet Actions) : construction seule, paquets disponibles
+# en artefacts du workflow, sans publication — pour tester avant d'étiqueter.
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publication-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  verifier:
+    name: Vérifier la version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Cohérence des versions et de l'étiquette
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            node scripts/version.mjs check "${GITHUB_REF_NAME}"
+          else
+            node scripts/version.mjs check
+          fi
+
+  paquets:
+    name: Paquets (${{ matrix.name }})
+    needs: verifier
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Ubuntu 22.04 : glibc plus ancienne, donc AppImage et DEB compatibles
+          # avec davantage de distributions.
+          - name: Linux
+            os: ubuntu-22.04
+            args: ""
+          - name: Windows
+            os: windows-latest
+            args: ""
+          # Binaire universel : processeurs Apple et Intel.
+          - name: macOS
+            os: macos-latest
+            args: "--target universal-apple-darwin"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.name == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Dépendances système Tauri
+        if: matrix.name == 'Linux'
+        timeout-minutes: 20
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          APT_OPTS="-o Acquire::Retries=5 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30"
+          sudo apt-get $APT_OPTS update
+          sudo apt-get $APT_OPTS install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev libxdo-dev libayatana-appindicator3-dev librsvg2-dev pkg-config
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+
+      - name: Dépendances de l'interface
+        working-directory: apps/desktop
+        run: npm ci
+
+      - name: Construire et publier
+        uses: tauri-apps/tauri-action@v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: apps/desktop
+          tauriScript: npm run tauri
+          args: ${{ matrix.args }}
+          # Étiquette présente : publication GitHub en brouillon ; sinon construction seule.
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          releaseName: "EVIDENTYX __VERSION__"
+          releaseBody: |
+            Paquets d'EVIDENTYX __VERSION__. Le détail des changements figure dans le [journal des modifications](https://github.com/${{ github.repository }}/blob/v__VERSION__/CHANGELOG.md).
+
+            | Système | Fichier |
+            |---|---|
+            | Linux (toutes distributions) | `.AppImage` — rendre exécutable puis lancer |
+            | Debian, Ubuntu | `.deb` |
+            | Fedora, openSUSE | `.rpm` |
+            | Windows | `-setup.exe` (installation par utilisateur) ou `.msi` |
+            | macOS (Apple et Intel) | `.dmg` |
+
+            ⚠️ Version de développement, paquets **non signés** : Windows (SmartScreen) et macOS (Gatekeeper) afficheront un avertissement à l'installation. Voir la [procédure d'installation](https://github.com/${{ github.repository }}/blob/main/docs/installation.md).
+          releaseDraft: true
+          prerelease: ${{ startsWith(github.ref_name, 'v0.') }}
+          uploadWorkflowArtifacts: true
+          workflowArtifactNamePattern: "evidentyx-[platform]-[arch]"
+          retryAttempts: 1
