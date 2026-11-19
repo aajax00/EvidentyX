@@ -27,6 +27,10 @@ EVIDENTYX est une application de bureau open source, multiplateforme (Linux, Win
 
 Le détail est dans [`docs/feuille-de-route.md`](docs/feuille-de-route.md).
 
+## Installation
+
+Les paquets (Linux, Windows, macOS) sont joints aux [publications](https://github.com/aajax00/EvidentyX/releases). Voir le [guide d'installation](docs/installation.md).
+
 ## Démarrage rapide (développeurs)
 
 Prérequis :
@@ -42,8 +46,8 @@ sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev
 Lancer l'application en mode développement :
 
 ```bash
-git clone https://github.com/CHANGER-MOI/evidentyx.git
-cd evidentyx/apps/desktop
+git clone https://github.com/aajax00/EvidentyX.git
+cd EvidentyX/apps/desktop
 npm install
 npm run tauri dev
 ```
@@ -58,6 +62,8 @@ cargo test --workspace
 
 - [Architecture](docs/architecture.md)
 - [Système de design](docs/systeme-de-design.md)
+- [Installation](docs/installation.md)
+- [Publier une version](docs/publication.md)
 - [Décisions techniques (ADR)](docs/decisions/)
 - [Contribuer](CONTRIBUTING.md)
 - [Politique de sécurité](SECURITY.md)

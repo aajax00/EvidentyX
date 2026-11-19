@@ -30,6 +30,8 @@ jobs:
       # Sans dépendance système : échoue vite si le code n'est pas formaté.
       - name: Vérifier le formatage
         run: cargo fmt --all -- --check
+      - name: Cohérence des versions
+        run: node scripts/version.mjs
       - uses: Swatinem/rust-cache@v2
       - name: Dépendances système Tauri
         # Habituellement 25 à 40 s ; le miroir apt est parfois très lent, d'où

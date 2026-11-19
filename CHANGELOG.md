@@ -29,6 +29,9 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 - Vue d'ensemble d'une enquête (événements, sources, entités, alertes, activité sur 24 h, principales sources, alertes par gravité), illustrée par des données de démonstration déterministes et étiquetées comme telles jusqu'à l'import de preuves (phase 2).
 - Composant `Switch` (interrupteur).
 - Corrections d'affichage : contours de focus rognés dans les zones défilantes, jambages coupés dans les textes tronqués, barre de défilement de la navigation recouvrant les libellés, colonne « Créée » masquée en fenêtre étroite, barre d'état sans débordement.
+- Publication : workflow GitHub qui, sur une étiquette `vX.Y.Z`, construit les paquets Linux (AppImage, DEB, RPM), Windows (installateur NSIS, MSI) et macOS (DMG universel) et les joint à une publication en brouillon ; lancement manuel pour un essai à blanc. Paquets non signés.
+- Version unique : `scripts/version.mjs` (vérifier, fixer), contrôlée en CI ; `tauri.conf.json` reprend la version de `package.json`. Métadonnées des paquets (éditeur, licence, description).
+- Documentation : installation (`docs/installation.md`) et procédure de publication (`docs/publication.md`).
 - Mode démonstration pour le développement dans un navigateur (moteur en mémoire, signalé à l'écran, exclu de la version publiée).
 
 ### Modifié
