@@ -1,0 +1,20 @@
+[package]
+name = "evidentyx-evidence"
+description = "Empreintes SHA-256 et vérification d'intégrité des preuves EVIDENTYX."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+evidentyx-core = { path = "../core" }
+# Implémentation SHA-256 de référence en Rust (RustCrypto), sans code C.
+sha2 = "0.11"
+
+[dev-dependencies]
+tempfile = "3"
+
+[lints]
+workspace = true

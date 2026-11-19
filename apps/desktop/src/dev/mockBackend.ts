@@ -5,7 +5,7 @@
 // Les règles reproduites ici sont volontairement minimales : la référence est
 // le moteur Rust (evidentyx-core, evidentyx-storage). Exclu de la version publiée.
 
-import type { Investigation, InvestigationQuery, Settings, StorageInfo } from "../api";
+import type { Evidence, Investigation, InvestigationQuery, Settings, StorageInfo } from "../api";
 
 const DAY = 86_400_000;
 const now = Date.now();
@@ -45,6 +45,40 @@ let settings: Settings = {
   defaultStatusFilter: "active",
 };
 
+const evidence: Evidence[] = [
+  {
+    id: 1,
+    investigationId: 1,
+    fileName: "access.log",
+    path: "/preuves/demo/nginx/access.log",
+    sizeBytes: 18_734_112,
+    sha256: "3f8a1c0d9be24f6a7d51e0c2b9a4f7e81d6c3b0a5e9f2d4c7b1a8e6f0d3c5b29",
+    fileModifiedAt: now - 7 * DAY,
+    addedAt: now - 6 * DAY,
+    integrity: "intact",
+    verifiedAt: now - 3_600_000,
+  },
+];
+let nextEvidenceId = 2;
+let demoPick = 0;
+const DEMO_FILES = ["/preuves/demo/auth.log", "/preuves/demo/capture-dmz.pcap", "/preuves/demo/pare-feu.csv"];
+
+/** Sélection fictive de fichiers (mode démonstration). */
+export function demoPickFiles(): string[] {
+  const file = DEMO_FILES[demoPick++ % DEMO_FILES.length]!;
+  return [file];
+}
+
+function fakeDigest(text: string): string {
+  let h = 2166136261;
+  let out = "";
+  for (let i = 0; i < 8; i++) {
+    for (const ch of `${text}#${i}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+    out += h.toString(16).padStart(8, "0");
+  }
+  return out;
+}
+
 const fail = (code: string, message: string, field?: string): never => {
   throw { code, message, ...(field ? { field } : {}) };
 };
@@ -82,13 +116,51 @@ export async function mockInvoke<T>(command: string, args: Record<string, unknow
   await new Promise((r) => setTimeout(r, 80));
   const result = ((): unknown => {
     switch (command) {
+      case "list_evidence":
+        find(args.investigationId);
+        return evidence.filter((e) => e.investigationId === args.investigationId).map((e) => ({ ...e }));
+      case "add_evidence": {
+        const inv = find(args.investigationId);
+        editable(inv);
+        const path = String(args.path);
+        const sha256 = fakeDigest(path);
+        const dup = evidence.find((e) => e.investigationId === inv.id && e.sha256 === sha256);
+        if (dup) fail("duplicate", `Ce contenu est déjà enregistré dans l'enquête (« ${dup.fileName} », même empreinte SHA-256)`);
+        const t = Date.now();
+        const created: Evidence = {
+          id: nextEvidenceId++,
+          investigationId: inv.id,
+          fileName: path.split("/").pop() ?? path,
+          path,
+          sizeBytes: 1_000_000 + (parseInt(sha256.slice(0, 6), 16) % 50_000_000),
+          sha256,
+          fileModifiedAt: t - DAY,
+          addedAt: t,
+          integrity: "intact",
+          verifiedAt: t,
+        };
+        evidence.push(created);
+        touch(inv);
+        return { ...created };
+      }
+      case "verify_evidence": {
+        const e = evidence.find((x) => x.id === args.id) ?? fail("not_found", "Preuve introuvable");
+        e.verifiedAt = Date.now();
+        return { ...e };
+      }
+      case "remove_evidence": {
+        const e = evidence.find((x) => x.id === args.id) ?? fail("not_found", "Preuve introuvable");
+        editable(find(e.investigationId));
+        evidence.splice(evidence.indexOf(e), 1);
+        return null;
+      }
       case "get_settings":
         return { ...settings };
       case "update_settings":
         settings = { ...(args.settings as Settings) };
         return { ...settings };
       case "storage_info":
-        return { path: "mémoire du navigateur (démonstration)", schemaVersion: 2, error: null } satisfies StorageInfo;
+        return { path: "mémoire du navigateur (démonstration)", schemaVersion: 3, error: null } satisfies StorageInfo;
       case "list_investigations": {
         const q = (args.query ?? {}) as InvestigationQuery;
         const terms = fold(q.text ?? "").split(" ").filter(Boolean);

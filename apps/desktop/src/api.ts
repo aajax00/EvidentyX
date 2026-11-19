@@ -25,6 +25,11 @@ export interface CommandError {
     | "not_found"
     | "schema_too_new"
     | "storage"
+    | "duplicate"
+    | "file_not_found"
+    | "not_a_file"
+    | "cancelled"
+    | "io"
     | "unavailable";
   message: string;
   field?: "name" | "description";
@@ -144,4 +149,59 @@ export function getSettings(): Promise<Settings> {
 
 export function updateSettings(settings: Settings): Promise<Settings> {
   return call("update_settings", { settings });
+}
+
+// ——— Preuves ———
+
+export type IntegrityStatus = "intact" | "modified" | "missing";
+
+/** Miroir de `EvidenceDto` (src-tauri/src/evidence.rs). Dates en ms Unix UTC. */
+export interface Evidence {
+  id: number;
+  investigationId: number;
+  fileName: string;
+  path: string;
+  sizeBytes: number;
+  sha256: string;
+  fileModifiedAt: number | null;
+  addedAt: number;
+  integrity: IntegrityStatus;
+  verifiedAt: number;
+}
+
+export function listEvidence(investigationId: number): Promise<Evidence[]> {
+  return call("list_evidence", { investigationId });
+}
+
+/** Lit le fichier (empreinte SHA-256, en lecture seule) et l'enregistre dans l'enquête. */
+export function addEvidence(investigationId: number, path: string): Promise<Evidence> {
+  return call("add_evidence", { investigationId, path });
+}
+
+/** Recalcule l'empreinte et enregistre le résultat de la vérification. */
+export function verifyEvidence(id: number): Promise<Evidence> {
+  return call("verify_evidence", { id });
+}
+
+/** Retire la référence ; le fichier source n'est jamais supprimé. */
+export function removeEvidence(id: number): Promise<void> {
+  return call("remove_evidence", { id });
+}
+
+/**
+ * Ouvre le sélecteur de fichiers natif. En mode démonstration (navigateur),
+ * renvoie des chemins fictifs.
+ */
+export async function pickEvidenceFiles(): Promise<string[]> {
+  if (isTauri()) {
+    const { open } = await import("@tauri-apps/plugin-dialog");
+    const selected = await open({ multiple: true, directory: false, title: "Ajouter des preuves" });
+    if (selected === null) return [];
+    return Array.isArray(selected) ? selected : [selected];
+  }
+  if (import.meta.env.DEV) {
+    const { demoPickFiles } = await import("./dev/mockBackend");
+    return demoPickFiles();
+  }
+  return [];
 }

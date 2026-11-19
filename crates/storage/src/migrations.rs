@@ -13,6 +13,7 @@ use rusqlite::Connection;
 const MIGRATIONS: &[(i64, &str)] = &[
     (1, include_str!("../migrations/0001_enquetes.sql")),
     (2, include_str!("../migrations/0002_reglages.sql")),
+    (3, include_str!("../migrations/0003_preuves.sql")),
 ];
 
 /// Version de schéma la plus récente connue de ce code.

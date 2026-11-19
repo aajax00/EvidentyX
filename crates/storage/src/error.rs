@@ -1,6 +1,6 @@
 //! Erreurs du stockage.
 
-use evidentyx_core::{CoreError, InvestigationId};
+use evidentyx_core::{CoreError, EvidenceId, InvestigationId};
 use std::fmt;
 
 /// Erreur renvoyée par le stockage.
@@ -12,6 +12,13 @@ pub enum StorageError {
     Domain(CoreError),
     /// Aucune enquête ne porte cet identifiant.
     NotFound(InvestigationId),
+    /// Aucune preuve ne porte cet identifiant.
+    EvidenceNotFound(EvidenceId),
+    /// Un fichier au contenu identique est déjà enregistré dans l'enquête.
+    DuplicateEvidence {
+        existing: EvidenceId,
+        file_name: String,
+    },
     /// La base a été créée par une version plus récente d'EVIDENTYX.
     SchemaTooNew { found: i64, supported: i64 },
     /// Une ligne enregistrée ne respecte pas les règles du domaine.
@@ -28,6 +35,11 @@ impl fmt::Display for StorageError {
             Self::Sqlite(e) => write!(f, "erreur de la base de données : {e}"),
             Self::Domain(e) => e.fmt(f),
             Self::NotFound(id) => write!(f, "enquête introuvable (identifiant {id})"),
+            Self::EvidenceNotFound(id) => write!(f, "preuve introuvable (identifiant {id})"),
+            Self::DuplicateEvidence { file_name, .. } => write!(
+                f,
+                "ce contenu est déjà enregistré dans l'enquête (« {file_name} », même empreinte SHA-256)"
+            ),
             Self::SchemaTooNew { found, supported } => write!(
                 f,
                 "la base de données a été créée par une version plus récente d'EVIDENTYX \

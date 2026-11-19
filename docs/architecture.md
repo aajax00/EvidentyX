@@ -41,7 +41,7 @@
 | `evidentyx-storage` | Persistance SQLite, migrations versionnées, enquêtes (journal d'audit : phase 4) | ✅ Initialisé |
 | `evidentyx-parser` | Analyseurs de formats (JSON, CSV, Syslog, Apache, Nginx, PCAP, EVTX) | ⚪ Phase 2 |
 | `evidentyx-normalizer` | Conversion vers le modèle d'événement canonique | ⚪ Phase 2-3 |
-| `evidentyx-evidence` | Hachage SHA-256, vérification d'intégrité | ⚪ Phase 2 |
+| `evidentyx-evidence` | Lecture en flux et en lecture seule des preuves, empreinte SHA-256, vérification d'intégrité ([ADR 0003](decisions/0003-preuves-et-integrite.md)) | ✅ Initialisé |
 | `evidentyx-timeline` | Requêtes chronologiques, pagination, filtres | ⚪ Phase 3 |
 | `evidentyx-correlation` | Règles de corrélation déterministes | ⚪ Phase 3 |
 | `evidentyx-graph` | Construction du graphe d'entités et de relations | ⚪ Phase 3 |
@@ -61,6 +61,7 @@ Les crates ne sont créés qu'au moment où ils contiennent du code réel.
 | `create_investigation`, `rename_investigation`, `update_investigation_description` | Création et modification (validation par `evidentyx-core`) |
 | `set_investigation_status` | Archivage, réactivation |
 | `delete_investigation` | Suppression définitive |
+| `list_evidence`, `add_evidence`, `verify_evidence`, `remove_evidence` | Preuves d'une enquête : liste, ajout avec empreinte SHA-256, vérification d'intégrité, retrait (le fichier n'est jamais touché) |
 | `get_settings`, `update_settings` | Lecture et enregistrement des réglages (validation par `evidentyx-core`) |
 
 Les erreurs sont renvoyées sous la forme `{ code, message, field? }` : `code` est stable (`validation`, `not_found`, `archived_read_only`…), `message` est en français, `field` désigne le champ de formulaire concerné. La base `evidentyx.sqlite` se trouve dans le dossier de données de l'application (par exemple `~/.local/share/org.evidentyx.desktop/` sous Linux).

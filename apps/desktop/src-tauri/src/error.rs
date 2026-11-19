@@ -1,6 +1,7 @@
 //! Erreurs renvoyées à l'interface.
 
 use evidentyx_core::CoreError;
+use evidentyx_evidence::EvidenceError;
 use evidentyx_storage::StorageError;
 use serde::Serialize;
 
@@ -46,7 +47,9 @@ impl From<CoreError> for CommandError {
                     "description"
                 }),
             ),
-            CoreError::UnknownStatus(_) => ("validation", None),
+            CoreError::UnknownStatus(_)
+            | CoreError::InvalidDigest
+            | CoreError::UnknownIntegrityStatus(_) => ("validation", None),
             CoreError::InvalidTransition { .. } => ("invalid_transition", None),
             CoreError::ArchivedReadOnly => ("archived_read_only", None),
         };
@@ -62,7 +65,12 @@ impl From<StorageError> for CommandError {
     fn from(e: StorageError) -> Self {
         match e {
             StorageError::Domain(core) => core.into(),
-            StorageError::NotFound(_) => Self::new("not_found", capitalize(&e.to_string())),
+            StorageError::NotFound(_) | StorageError::EvidenceNotFound(_) => {
+                Self::new("not_found", capitalize(&e.to_string()))
+            }
+            StorageError::DuplicateEvidence { .. } => {
+                Self::new("duplicate", capitalize(&e.to_string()))
+            }
             StorageError::SchemaTooNew { .. } => {
                 Self::new("schema_too_new", capitalize(&e.to_string()))
             }
@@ -70,6 +78,18 @@ impl From<StorageError> for CommandError {
                 Self::new("storage", capitalize(&e.to_string()))
             }
         }
+    }
+}
+
+impl From<EvidenceError> for CommandError {
+    fn from(e: EvidenceError) -> Self {
+        let code = match e {
+            EvidenceError::NotFound(_) => "file_not_found",
+            EvidenceError::NotAFile(_) => "not_a_file",
+            EvidenceError::Cancelled => "cancelled",
+            EvidenceError::NonUtf8Path(_) | EvidenceError::Io { .. } => "io",
+        };
+        Self::new(code, capitalize(&e.to_string()))
     }
 }
 

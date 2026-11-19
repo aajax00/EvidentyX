@@ -10,12 +10,14 @@
 //! documentation et les messages destinés à l'analyste sont en français.
 
 pub mod error;
+pub mod evidence;
 pub mod investigation;
 pub mod search;
 pub mod settings;
 pub mod text;
 
 pub use error::CoreError;
+pub use evidence::{Evidence, EvidenceId, IntegrityStatus, Sha256Digest};
 pub use investigation::{
     Investigation, InvestigationDescription, InvestigationId, InvestigationName,
     InvestigationStatus, Timestamp,
