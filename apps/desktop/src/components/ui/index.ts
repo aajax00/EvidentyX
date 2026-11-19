@@ -9,4 +9,5 @@ export { SearchField, type SearchFieldProps } from "./SearchField";
 export { SegmentedControl, type SegmentOption, type SegmentedControlProps } from "./SegmentedControl";
 export { Select, type SelectOption, type SelectProps } from "./Select";
 export { Spinner, type SpinnerProps } from "./Spinner";
+export { Switch, type SwitchProps } from "./Switch";
 export { ToastProvider, useToast, type ToastTone } from "./Toast";

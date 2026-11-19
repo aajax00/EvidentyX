@@ -11,6 +11,7 @@ mod clock;
 mod error;
 mod investigations;
 mod migrations;
+mod settings;
 
 pub use clock::{Clock, SystemClock};
 pub use error::{Result, StorageError};

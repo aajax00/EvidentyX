@@ -24,6 +24,7 @@ import { Badge, Button, EmptyState, Panel, Spinner, TextAreaField, useToast } fr
 import { formatDateTime, formatRelative } from "../format";
 import { useInvestigations } from "../investigations/InvestigationsProvider";
 import { StatusBadge } from "../investigations/StatusBadge";
+import { OverviewPanel } from "../overview/OverviewPanel";
 import { useRouter } from "../shell/router";
 
 const MODULES: ReadonlyArray<{ icon: LucideIcon; name: string; text: string; plannedFor: string }> = [
@@ -141,6 +142,8 @@ export function InvestigationPage({ id }: { id: number }) {
           refresh();
         }}
       />
+
+      <OverviewPanel investigationId={investigation.id} />
 
       <Panel title="Contenu de l'enquête" actions={<Badge>planifié</Badge>}>
         <p className="text-muted panel-intro">

@@ -6,6 +6,7 @@ export type Route =
   | { page: "home" }
   | { page: "investigations" }
   | { page: "investigation"; id: number }
+  | { page: "settings" }
   | { page: "about" };
 
 export type PageId = Route["page"];

@@ -6,6 +6,7 @@
 
 mod error;
 mod investigations;
+mod settings;
 mod state;
 
 use serde::Serialize;
@@ -59,6 +60,8 @@ pub fn run() {
             investigations::update_investigation_description,
             investigations::set_investigation_status,
             investigations::delete_investigation,
+            settings::get_settings,
+            settings::update_settings,
         ])
         .run(tauri::generate_context!())
         .expect("échec du démarrage de l'application EVIDENTYX");

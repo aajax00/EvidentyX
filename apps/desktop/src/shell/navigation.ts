@@ -62,7 +62,7 @@ export const NAVIGATION: readonly NavGroup[] = [
   {
     label: "Application",
     items: [
-      { kind: "planned", label: "Paramètres", icon: Settings, plannedFor: "étape 1.7" },
+      { kind: "page", page: "settings", label: "Paramètres", icon: Settings },
       { kind: "page", page: "about", label: "À propos", icon: Info },
     ],
   },
@@ -72,6 +72,7 @@ export const NAVIGATION: readonly NavGroup[] = [
 export const SECTION_TITLES: Record<SectionId, string> = {
   home: "Accueil",
   investigations: "Enquêtes",
+  settings: "Paramètres",
   about: "À propos",
 };
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ToastProvider } from "./components/ui";
 import { EngineProvider } from "./engine";
 import { SplashScreen } from "./motion/SplashScreen";
@@ -8,28 +8,48 @@ import { AboutPage } from "./pages/AboutPage";
 import { HomePage } from "./pages/HomePage";
 import { InvestigationPage } from "./pages/InvestigationPage";
 import { InvestigationsPage } from "./pages/InvestigationsPage";
+import { SettingsPage } from "./pages/SettingsPage";
+import { SettingsProvider, useSettings } from "./settings/SettingsProvider";
 import { AppShell } from "./shell/AppShell";
 import { RouterProvider, useRouter } from "./shell/router";
 import "./pages/pages.css";
 
 export function App() {
-  const reducedMotion = useReducedMotion();
-  // Écran d'ouverture affiché une fois au lancement (sauf si les animations sont réduites).
-  const [splash, setSplash] = useState(() => !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-
   return (
     <EngineProvider>
-      {splash && !reducedMotion && <SplashScreen onDone={() => setSplash(false)} />}
-      <ToastProvider>
-        <RouterProvider>
-          <InvestigationsProvider>
-            <AppShell>
-              <CurrentPage />
-            </AppShell>
-          </InvestigationsProvider>
-        </RouterProvider>
-      </ToastProvider>
+      <SettingsProvider>
+        <ToastProvider>
+          <RouterProvider>
+            <InvestigationsProvider>
+              <LaunchGate>
+                <AppShell>
+                  <CurrentPage />
+                </AppShell>
+              </LaunchGate>
+            </InvestigationsProvider>
+          </RouterProvider>
+        </ToastProvider>
+      </SettingsProvider>
     </EngineProvider>
+  );
+}
+
+/**
+ * Attend la lecture des réglages (quelques millisecondes) avant d'afficher
+ * l'interface, pour appliquer d'emblée la barre latérale et l'écran d'ouverture.
+ */
+function LaunchGate({ children }: { children: ReactNode }) {
+  const { settings, loaded } = useSettings();
+  const reducedMotion = useReducedMotion();
+  const [splashDone, setSplashDone] = useState(false);
+
+  if (!loaded) return null;
+  const showSplash = settings.splashScreen && !reducedMotion && !splashDone;
+  return (
+    <>
+      {children}
+      {showSplash && <SplashScreen onDone={() => setSplashDone(true)} />}
+    </>
   );
 }
 
@@ -42,6 +62,8 @@ function CurrentPage() {
       return <InvestigationsPage />;
     case "investigation":
       return <InvestigationPage key={route.id} id={route.id} />;
+    case "settings":
+      return <SettingsPage />;
     case "about":
       return <AboutPage />;
   }
