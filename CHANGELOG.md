@@ -22,3 +22,4 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 ### Modifié
 
 - Version minimale de Rust relevée de 1.80 à 1.90, exigée par Tauri 2.11 et `rusqlite` (ADR 0002).
+- Intégration continue : un seul job Linux (formatage, Clippy, tests) au lieu de deux, délais maximum sur les jobs et sur l'installation des paquets système, nouvelles tentatives apt.
