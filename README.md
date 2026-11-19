@@ -15,12 +15,12 @@ EVIDENTYX est une application de bureau open source, multiplateforme (Linux, Win
 
 ## État du projet
 
-⚠️ **Développement précoce — version 0.0.1.** Aucune fonctionnalité d'analyse n'est encore disponible.
+⚠️ **Développement précoce — version 0.1.0.** La gestion des enquêtes est disponible ; l'import et l'analyse des preuves arrivent avec la phase 2.
 
 | Phase | Contenu | État |
 |---|---|---|
-| 1 — Fondations | Dépôt, workspace Rust, Tauri 2, React/TypeScript, système de design, gestion des enquêtes | 🟡 En cours |
-| 2 — Ingestion | Modèle canonique, JSON, CSV, Syslog, Apache/Nginx, PCAP, hachage SHA-256 | ⚪ Planifiée |
+| 1 — Fondations | Dépôt, workspace Rust, Tauri 2, React/TypeScript, système de design, gestion des enquêtes | ✅ Terminée (`v0.1.0`) |
+| 2 — Ingestion | Modèle canonique, JSON, CSV, Syslog, Apache/Nginx, PCAP, hachage SHA-256 | 🟡 Prochaine |
 | 3 — Moteur d'enquête | Normalisation, SQLite, chronologie, corrélation, graphe | ⚪ Planifiée |
 | 4 — Détection et rapports | Règles de détection, coffre de preuves, exports PDF/JSON/CSV | ⚪ Planifiée |
 | 5 — Stabilisation | Tests, sécurité, performances, paquets signés | ⚪ Planifiée |
