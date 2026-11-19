@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/core", "crates/storage", "apps/desktop/src-tauri"]
 
 [workspace.package]
-version = "0.0.1"
+version = "0.1.0"
 edition = "2021"
 rust-version = "1.90"
 license = "Apache-2.0"
@@ -16,6 +16,7 @@ unsafe_code = "forbid"
 [workspace.lints.clippy]
 all = { level = "warn", priority = -1 }
 
+# Optimisé, mais compilé en parallèle : codegen-units = 1 réduisait un peu la
+# taille du binaire au prix de plusieurs minutes de compilation par plateforme.
 [profile.release]
 lto = "thin"
-codegen-units = 1
