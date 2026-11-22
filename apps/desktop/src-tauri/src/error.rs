@@ -49,7 +49,9 @@ impl From<CoreError> for CommandError {
             ),
             CoreError::UnknownStatus(_)
             | CoreError::InvalidDigest
-            | CoreError::UnknownIntegrityStatus(_) => ("validation", None),
+            | CoreError::UnknownIntegrityStatus(_)
+            | CoreError::InvalidEvent(_)
+            | CoreError::UnknownEventValue { .. } => ("validation", None),
             CoreError::InvalidTransition { .. } => ("invalid_transition", None),
             CoreError::ArchivedReadOnly => ("archived_read_only", None),
         };

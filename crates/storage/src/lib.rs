@@ -9,6 +9,7 @@
 
 mod clock;
 mod error;
+mod events;
 mod evidence;
 mod investigations;
 mod migrations;
@@ -16,6 +17,7 @@ mod settings;
 
 pub use clock::{Clock, SystemClock};
 pub use error::{Result, StorageError};
+pub use events::{EventPage, InsertReport};
 pub use evidence::NewEvidence;
 pub use migrations::LATEST_SCHEMA_VERSION;
 

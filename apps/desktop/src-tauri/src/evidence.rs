@@ -29,6 +29,8 @@ pub struct EvidenceDto {
     /// "intact", "modified" ou "missing".
     pub integrity: &'static str,
     pub verified_at: i64,
+    /// Événements extraits de la preuve (0 tant qu'elle n'est pas analysée).
+    pub event_count: u64,
 }
 
 impl From<Evidence> for EvidenceDto {
@@ -44,6 +46,7 @@ impl From<Evidence> for EvidenceDto {
             added_at: e.added_at.unix_millis(),
             integrity: e.integrity.as_str(),
             verified_at: e.verified_at.unix_millis(),
+            event_count: 0,
         }
     }
 }
@@ -88,10 +91,18 @@ fn record_verification(
 }
 
 pub fn list(storage: &Storage, investigation_id: i64) -> CommandResult<Vec<EvidenceDto>> {
+    let id = InvestigationId::new(investigation_id);
+    let counts = storage.event_counts_by_evidence(id)?;
     Ok(storage
-        .list_evidence(InvestigationId::new(investigation_id))?
+        .list_evidence(id)?
         .into_iter()
-        .map(Into::into)
+        .map(|e| {
+            let event_count = counts.get(&e.id).copied().unwrap_or(0);
+            EvidenceDto {
+                event_count,
+                ..e.into()
+            }
+        })
         .collect())
 }
 

@@ -232,6 +232,11 @@ export function EvidencePanel({ investigationId, readOnly }: { investigationId: 
                     <p className="evidence-item__path mono" title={e.path}>
                       {e.path}
                     </p>
+                    <p className="evidence-item__events">
+                      {e.eventCount === 0
+                        ? "Non analysée — lecture des formats à venir"
+                        : `${e.eventCount.toLocaleString("fr-FR")} événement${e.eventCount > 1 ? "s" : ""} extrait${e.eventCount > 1 ? "s" : ""}`}
+                    </p>
                   </div>
                   <span className="evidence-item__size mono">{formatBytes(e.sizeBytes)}</span>
                   <span className="evidence-item__digest">

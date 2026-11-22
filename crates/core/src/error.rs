@@ -26,6 +26,10 @@ pub enum CoreError {
     InvalidDigest,
     /// Statut d'intégrité inconnu.
     UnknownIntegrityStatus(String),
+    /// Événement qui ne respecte pas le modèle canonique.
+    InvalidEvent(String),
+    /// Valeur inconnue pour un champ énuméré d'événement.
+    UnknownEventValue { field: &'static str, value: String },
 }
 
 impl fmt::Display for CoreError {
@@ -55,6 +59,10 @@ impl fmt::Display for CoreError {
             ),
             Self::UnknownIntegrityStatus(value) => {
                 write!(f, "statut d'intégrité inconnu : « {value} »")
+            }
+            Self::InvalidEvent(detail) => write!(f, "événement invalide : {detail}"),
+            Self::UnknownEventValue { field, value } => {
+                write!(f, "valeur inconnue pour {field} : « {value} »")
             }
             Self::ArchivedReadOnly => write!(
                 f,
