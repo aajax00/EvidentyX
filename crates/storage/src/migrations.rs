@@ -14,6 +14,7 @@ const MIGRATIONS: &[(i64, &str)] = &[
     (1, include_str!("../migrations/0001_enquetes.sql")),
     (2, include_str!("../migrations/0002_reglages.sql")),
     (3, include_str!("../migrations/0003_preuves.sql")),
+    (4, include_str!("../migrations/0004_evenements.sql")),
 ];
 
 /// Version de schéma la plus récente connue de ce code.

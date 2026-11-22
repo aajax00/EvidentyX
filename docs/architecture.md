@@ -50,6 +50,10 @@
 
 Les crates ne sont créés qu'au moment où ils contiennent du code réel.
 
+## Modèle d'événement
+
+Tous les formats de preuve sont convertis vers un **événement canonique** (`evidentyx-core::event`, [ADR 0004](decisions/0004-modele-evenement.md)) : référence exacte à la source (preuve, décalage en octets, ligne ou enregistrement), horodatage UTC en microsecondes avec sa précision et sa base, champs normalisés (hôte, adresses, ports, utilisateur, action, issue), message, texte brut et attributs d'origine. Stockage : tables `events` et `event_attributes` (migration 0004).
+
 ## Commandes Tauri
 
 | Commande | Rôle |

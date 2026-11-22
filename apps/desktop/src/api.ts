@@ -167,6 +167,8 @@ export interface Evidence {
   addedAt: number;
   integrity: IntegrityStatus;
   verifiedAt: number;
+  /** Événements extraits (0 tant que la preuve n'est pas analysée). */
+  eventCount: number;
 }
 
 export function listEvidence(investigationId: number): Promise<Evidence[]> {

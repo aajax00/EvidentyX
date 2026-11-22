@@ -57,6 +57,7 @@ const evidence: Evidence[] = [
     addedAt: now - 6 * DAY,
     integrity: "intact",
     verifiedAt: now - 3_600_000,
+    eventCount: 0,
   },
 ];
 let nextEvidenceId = 2;
@@ -138,6 +139,7 @@ export async function mockInvoke<T>(command: string, args: Record<string, unknow
           addedAt: t,
           integrity: "intact",
           verifiedAt: t,
+          eventCount: 0,
         };
         evidence.push(created);
         touch(inv);
