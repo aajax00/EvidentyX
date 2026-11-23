@@ -167,6 +167,7 @@ export function EvidencePanel({ investigationId, readOnly }: { investigationId: 
       const r = await analyzeEvidence(e.id);
       const n = (v: number) => v.toLocaleString("fr-FR");
       const parts = [`${r.format} · ${n(r.inserted)} événement${r.inserted > 1 ? "s" : ""} extrait${r.inserted > 1 ? "s" : ""}`];
+      if (r.format === "Syslog" && r.layout) parts.push(r.layout);
       if (r.timeField) parts.push(`heure : ${r.timeField}`);
       else if (r.format === "CSV") parts.push("aucune colonne d'heure reconnue");
       if (r.duplicates > 0) parts.push(`${n(r.duplicates)} déjà présent${r.duplicates > 1 ? "s" : ""}`);

@@ -434,6 +434,7 @@ mod tests {
             input.as_bytes(),
             ParseContext {
                 evidence_id: EvidenceId::new(3),
+                reference_time: None,
                 on_progress: &mut progress,
                 cancel: &cancel,
             },
@@ -571,7 +572,7 @@ mod tests {
                 "a.log",
                 b"Nov 16 10:00:00 srv sshd[42]: Accepted password\n"
             ),
-            None
+            Some(Format::Syslog)
         );
         assert_eq!(detect("a.json", b"[{}]"), Some(Format::JsonArray));
         assert_eq!(sniff(b"a\tb\tc\n1\t2\t3\n"), Some((b'\t', 3)));

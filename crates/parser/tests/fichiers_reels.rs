@@ -33,6 +33,7 @@ fn fichier_reel() {
         std::fs::File::open(&path).unwrap(),
         ParseContext {
             evidence_id: EvidenceId::new(1),
+            reference_time: None,
             on_progress: &mut progress,
             cancel: &cancel,
         },

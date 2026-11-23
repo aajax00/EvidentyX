@@ -11,16 +11,17 @@
 //! - **progression** et **annulation** ;
 //! - chaque événement garde sa référence exacte à la source.
 //!
-//! Formats pris en charge : JSON Lines, tableau JSON, objets JSON concaténés, CSV.
+//! Formats pris en charge : JSON Lines, tableau JSON, objets JSON concaténés, CSV, Syslog.
 
 mod delimited;
 mod fields;
 mod json;
+mod syslog;
 pub mod time;
 
 pub use fields::{map_fields, map_fields_with, Hints, Scalar};
 
-use evidentyx_core::{EvidenceId, NewEvent};
+use evidentyx_core::{EvidenceId, NewEvent, Timestamp};
 use std::fmt;
 use std::io::{self, Read};
 use std::sync::atomic::AtomicBool;
@@ -41,6 +42,8 @@ pub enum Format {
     JsonConcatenated,
     /// Valeurs séparées (virgule, point-virgule, tabulation ou barre verticale).
     Csv,
+    /// Syslog (RFC 5424, RFC 3164, format fichier de rsyslog).
+    Syslog,
 }
 
 impl Format {
@@ -50,6 +53,7 @@ impl Format {
             Self::JsonArray => "json_array",
             Self::JsonConcatenated => "json_concatenated",
             Self::Csv => "csv",
+            Self::Syslog => "syslog",
         }
     }
 
@@ -59,6 +63,7 @@ impl Format {
             Self::JsonArray => "Tableau JSON",
             Self::JsonConcatenated => "Objets JSON",
             Self::Csv => "CSV",
+            Self::Syslog => "Syslog",
         }
     }
 }
@@ -66,7 +71,9 @@ impl Format {
 /// Détecte le format d'après le nom du fichier et ses premiers octets.
 /// Renvoie `None` si aucun format pris en charge ne correspond.
 pub fn detect(file_name: &str, head: &[u8]) -> Option<Format> {
-    json::detect(file_name, head).or_else(|| delimited::detect(file_name, head))
+    json::detect(file_name, head)
+        .or_else(|| syslog::detect(head))
+        .or_else(|| delimited::detect(file_name, head))
 }
 
 /// Enregistrement illisible, signalé sans interrompre la lecture.
@@ -166,6 +173,9 @@ impl From<io::Error> for ParseError {
 /// Paramètres d'une lecture.
 pub struct ParseContext<'a> {
     pub evidence_id: EvidenceId,
+    /// Date de référence du fichier (dernière modification), pour les formats
+    /// sans année ; `None` si elle est inconnue.
+    pub reference_time: Option<Timestamp>,
     /// Appelé avec le nombre d'octets lus depuis le début.
     pub on_progress: &'a mut dyn FnMut(u64),
     /// Consulté régulièrement ; `true` interrompt la lecture.
@@ -181,6 +191,7 @@ pub fn parse(
 ) -> Result<ParseReport, ParseError> {
     match format {
         Format::Csv => delimited::parse(reader, ctx, sink),
+        Format::Syslog => syslog::parse(reader, ctx, sink),
         _ => json::parse(format, reader, ctx, sink),
     }
 }

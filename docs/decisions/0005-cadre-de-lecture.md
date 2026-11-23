@@ -29,6 +29,13 @@ Chaque format de preuve (JSON, CSV, Syslog, journaux web, PCAP) doit produire de
 - **EZ Tools** : les colonnes d'EvtxECmd (`TimeCreated`, `Computer`, `UserName`, `MapDescription`…) sont reconnues par les alias communs ; les sorties à plusieurs horodatages par ligne (MFTECmd) relèvent d'une évolution ultérieure.
 - **Performances mesurées** (compilation optimisée, lecture seule) : 70 000 lignes de journaux en 2 s ; fichiers de flux CIC-IDS2017 à 79 colonnes ≈ 5 700 lignes/s — optimisation prévue en phase 5.
 
+## Complément — Syslog (étape 2.5)
+
+- Trois écritures, reconnues **ligne par ligne** (un fichier peut les mélanger) : RFC 5424, RFC 3164 (`<PRI>` facultatif, absent des fichiers Linux), format fichier de rsyslog (heure ISO 8601, étiquette `app:` exigée pour ne pas confondre avec un journal daté quelconque). Détection : au moins 80 % des premières lignes ; testée avant le CSV.
+- **Année (RFC 3164)** : la plus récente qui ne place pas l'événement plus d'un jour après la date de modification du fichier ; base `InferredYear`. Sans date de fichier, l'événement reste sans heure. Limites : date de modification altérée par une copie, fichier couvrant plus d'un an ; fuseau inconnu, lu comme UTC.
+- **Champs repris des messages** (sshd, sudo, pare-feu du noyau), mot pour mot. Les noms d'utilisateur de sshd viennent de l'attaquant : l'adresse est lue à partir de la fin du message, pour qu'un nom piégé (« x from 1.2.3.4 ») ne la falsifie pas. sudo n'indique pas la réussite d'une commande : aucune issue n'est déduite, sauf refus explicite.
+- Catégorie d'après l'application, puis le service (`facility`). Pas de nouvelle dépendance.
+
 ## Conséquences
 
 - Les étapes 2.4 à 2.7 ajoutent un module par format en réutilisant le cadre et `map_fields`.

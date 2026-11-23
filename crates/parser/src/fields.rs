@@ -366,7 +366,7 @@ fn kind_from_keys(keys: &[String]) -> EventKind {
     kind
 }
 
-fn clip_chars(s: &str, max: usize) -> String {
+pub(crate) fn clip_chars(s: &str, max: usize) -> String {
     if s.chars().count() <= max {
         s.to_owned()
     } else {

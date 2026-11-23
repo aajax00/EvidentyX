@@ -55,7 +55,7 @@ pub struct RecordErrorDto {
 fn unsupported() -> CommandError {
     CommandError::new(
         "unsupported_format",
-        "Format non reconnu pour l'instant : JSON, JSON Lines et CSV sont lus. Syslog, journaux web et PCAP arrivent aux étapes suivantes.",
+        "Format non reconnu pour l'instant : JSON, JSON Lines, CSV et Syslog sont lus. Journaux web et PCAP arrivent aux étapes suivantes.",
     )
 }
 
@@ -141,6 +141,7 @@ pub fn analyze(
             &mut reader,
             ParseContext {
                 evidence_id: id,
+                reference_time: evidence.file_modified_at,
                 on_progress: &mut progress,
                 cancel: &cancel,
             },
@@ -296,7 +297,7 @@ mod tests {
 
     #[test]
     fn format_non_reconnu() {
-        let (db, id, _dir, _) = setup(b"Nov 16 10:00:00 srv sshd[42]: Accepted\n", "auth.log");
+        let (db, id, _dir, _) = setup(b"texte libre\nsans structure\n", "notes.txt");
         assert_eq!(run(&db, id).unwrap_err().code, "unsupported_format");
     }
 }
