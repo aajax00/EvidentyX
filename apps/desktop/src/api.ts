@@ -221,6 +221,10 @@ export interface AnalysisReport {
   duplicates: number;
   errors: number;
   firstErrors: Array<{ line: number; byteOffset: number; message: string }>;
+  /** Colonne retenue pour l'heure (CSV). */
+  timeField: string | null;
+  /** Structure reconnue (CSV : séparateur, colonnes, en-tête). */
+  layout: string | null;
 }
 
 /** Lit la preuve (format reconnu automatiquement) et enregistre ses événements. */

@@ -38,6 +38,10 @@ pub struct AnalysisReportDto {
     pub duplicates: u64,
     pub errors: u64,
     pub first_errors: Vec<RecordErrorDto>,
+    /// Colonne retenue pour l'heure (CSV), si une colonne a été reconnue.
+    pub time_field: Option<String>,
+    /// Structure reconnue (CSV : séparateur, colonnes, en-tête).
+    pub layout: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -51,7 +55,7 @@ pub struct RecordErrorDto {
 fn unsupported() -> CommandError {
     CommandError::new(
         "unsupported_format",
-        "Format non reconnu pour l'instant : seuls JSON et JSON Lines sont lus. CSV, Syslog, journaux web et PCAP arrivent aux étapes suivantes.",
+        "Format non reconnu pour l'instant : JSON, JSON Lines et CSV sont lus. Syslog, journaux web et PCAP arrivent aux étapes suivantes.",
     )
 }
 
@@ -177,6 +181,8 @@ pub fn analyze(
         inserted,
         duplicates,
         errors: report.errors,
+        time_field: report.time_field,
+        layout: report.layout,
         first_errors: report
             .first_errors
             .into_iter()
@@ -290,7 +296,7 @@ mod tests {
 
     #[test]
     fn format_non_reconnu() {
-        let (db, id, _dir, _) = setup(b"a,b\n1,2\n", "data.csv");
+        let (db, id, _dir, _) = setup(b"Nov 16 10:00:00 srv sshd[42]: Accepted\n", "auth.log");
         assert_eq!(run(&db, id).unwrap_err().code, "unsupported_format");
     }
 }

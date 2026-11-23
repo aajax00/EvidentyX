@@ -159,12 +159,15 @@ export async function mockInvoke<T>(command: string, args: Record<string, unknow
       case "analyze_evidence": {
         const e = evidence.find((x) => x.id === args.evidenceId) ?? fail("not_found", "Preuve introuvable");
         editable(find(e.investigationId));
-        if (!/\.(jsonl?|ndjson)$/i.test(e.fileName))
-          fail("unsupported_format", "Format non reconnu pour l'instant : seuls JSON et JSON Lines sont lus.");
+        if (!/\.(jsonl?|ndjson|csv|tsv)$/i.test(e.fileName))
+          fail("unsupported_format", "Format non reconnu pour l'instant : JSON, JSON Lines et CSV sont lus.");
+        const isCsv = /\.(csv|tsv)$/i.test(e.fileName);
         const before = e.eventCount;
         e.eventCount = 1240;
         return {
-          format: "JSON Lines",
+          format: isCsv ? "CSV" : "JSON Lines",
+          timeField: isCsv ? "timestamp_utc" : null,
+          layout: isCsv ? "séparateur : virgule · 17 colonnes · en-tête" : null,
           records: 1243,
           inserted: e.eventCount - before,
           duplicates: before,
