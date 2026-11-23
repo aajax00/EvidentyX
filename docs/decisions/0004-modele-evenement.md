@@ -17,6 +17,10 @@ La phase 2 convertit des formats très différents (JSON, CSV, Syslog, journaux 
 6. **Chronologie déterministe** : ordre (heure, puis id d'insertion), événements sans heure à la fin ; pagination par **curseur** (stable, sans `OFFSET`).
 7. **Aucune dépendance ajoutée** : adresses IP via `std::net`, horodatages en entiers.
 
+## Révision (2026-11-23) — attributs compacts
+
+Une ligne par attribut (table `event_attributes`) a produit 29 millions de lignes pour 431 401 événements réels (fichiers à 79 colonnes) : retrait d'une preuve en 25 s. La migration 0005 regroupe les attributs en une colonne JSON `events.attributes` (contenu conservé, revalidé à la lecture ; dépendance `serde_json`, déjà utilisée par le parser). Mesure sur la même base : 3,5 s.
+
 ## Conséquences
 
 - Chaque analyseur de format (étapes 2.3 à 2.7) produit des `NewEvent` et choisit honnêtement précision et base de l'heure.

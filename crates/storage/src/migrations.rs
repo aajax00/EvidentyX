@@ -15,6 +15,7 @@ const MIGRATIONS: &[(i64, &str)] = &[
     (2, include_str!("../migrations/0002_reglages.sql")),
     (3, include_str!("../migrations/0003_preuves.sql")),
     (4, include_str!("../migrations/0004_evenements.sql")),
+    (5, include_str!("../migrations/0005_attributs_compacts.sql")),
 ];
 
 /// Version de schéma la plus récente connue de ce code.
@@ -50,6 +51,35 @@ mod tests {
     fn versions_strictement_croissantes() {
         assert!(MIGRATIONS.windows(2).all(|w| w[0].0 < w[1].0));
         assert_eq!(MIGRATIONS[0].0, 1);
+    }
+
+    #[test]
+    fn attributs_existants_conserves_par_la_migration_5() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        for (v, sql) in MIGRATIONS.iter().filter(|(v, _)| *v <= 4) {
+            conn.execute_batch(sql).unwrap();
+            conn.pragma_update(None, "user_version", v).unwrap();
+        }
+        conn.execute_batch(
+            "INSERT INTO investigations VALUES (1, 'E', '', 'active', 0, 0);
+             INSERT INTO evidence VALUES (1, 1, 'a', '/a', 1, printf('%064d', 0), NULL, 0, 'intact', 0);
+             INSERT INTO events (id, investigation_id, evidence_id, byte_offset, kind, message, raw, raw_truncated)
+                  VALUES (1, 1, 1, 0, 'other', 'm', 'r', 0), (2, 1, 1, 5, 'other', 'm', 'r', 0);
+             INSERT INTO event_attributes VALUES (1, 'b', 'é \"x\"'), (1, 'a', '1');",
+        )
+        .unwrap();
+        migrate(&mut conn).unwrap();
+        let get = |id: i64| -> String {
+            conn.query_row("SELECT attributes FROM events WHERE id = ?1", [id], |r| {
+                r.get(0)
+            })
+            .unwrap()
+        };
+        let map: std::collections::BTreeMap<String, String> =
+            serde_json::from_str(&get(1)).unwrap();
+        assert_eq!(map["a"], "1");
+        assert_eq!(map["b"], "é \"x\"");
+        assert_eq!(get(2), "{}");
     }
 
     #[test]

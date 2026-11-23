@@ -13,6 +13,8 @@ evidentyx-core = { path = "../core" }
 # SQLite compilé avec le crate (« bundled ») : aucune bibliothèque système
 # requise, même version de SQLite sur Linux, Windows et macOS.
 rusqlite = { version = "0.43", features = ["bundled"] }
+# Attributs d'événement (colonne JSON), même dépendance que evidentyx-parser.
+serde_json = "1"
 
 [dev-dependencies]
 tempfile = "3"

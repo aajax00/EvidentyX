@@ -58,6 +58,7 @@ export function EvidencePanel({ investigationId, readOnly }: { investigationId: 
   const [verifying, setVerifying] = useState<Set<number>>(new Set());
   const [analyzing, setAnalyzing] = useState<Set<number>>(new Set());
   const [toRemove, setToRemove] = useState<Evidence | null>(null);
+  const [removing, setRemoving] = useState(false);
   const [dragOver, setDragOver] = useState(false);
 
   const reload = useCallback(() => {
@@ -319,24 +320,30 @@ export function EvidencePanel({ investigationId, readOnly }: { investigationId: 
         <Dialog
           width="sm"
           title="Retirer la preuve ?"
-          onClose={() => setToRemove(null)}
+          onClose={() => {
+            if (!removing) setToRemove(null);
+          }}
           footer={
             <>
-              <Button onClick={() => setToRemove(null)} autoFocus>
+              <Button onClick={() => setToRemove(null)} disabled={removing} autoFocus>
                 Annuler
               </Button>
               <Button
                 variant="danger"
                 icon={Trash2}
+                loading={removing}
                 onClick={async () => {
                   const target = toRemove;
-                  setToRemove(null);
+                  setRemoving(true);
                   try {
                     await removeEvidence(target.id);
                     notify(`« ${target.fileName} » retirée de l'enquête.`);
                     refresh();
                   } catch (e) {
                     notify(toCommandError(e).message, "danger");
+                  } finally {
+                    setRemoving(false);
+                    setToRemove(null);
                   }
                   reload();
                 }}

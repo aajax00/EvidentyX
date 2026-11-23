@@ -76,9 +76,9 @@ impl From<StorageError> for CommandError {
             StorageError::SchemaTooNew { .. } => {
                 Self::new("schema_too_new", capitalize(&e.to_string()))
             }
-            StorageError::Sqlite(_) | StorageError::CorruptRow { .. } => {
-                Self::new("storage", capitalize(&e.to_string()))
-            }
+            StorageError::Sqlite(_)
+            | StorageError::OpenFailed
+            | StorageError::CorruptRow { .. } => Self::new("storage", capitalize(&e.to_string())),
         }
     }
 }

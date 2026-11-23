@@ -721,3 +721,20 @@
 .stat__text {
   min-width: 0;
 }
+
+/* ——— Attente de l'ouverture de la base ——— */
+
+.database-wait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  height: 100%;
+  padding: var(--space-6);
+  text-align: center;
+}
+
+.database-wait .text-muted {
+  max-width: 46ch;
+}

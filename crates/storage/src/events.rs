@@ -28,7 +28,7 @@ pub struct EventPage {
 
 const COLUMNS: &str = "id, evidence_id, byte_offset, line, record, time_us, time_precision, \
                        time_basis, kind, host, source_ip, source_port, destination_ip, \
-                       destination_port, user_name, action, outcome, message, raw, raw_truncated";
+                       destination_port, user_name, action, outcome, message, raw, raw_truncated, attributes";
 
 fn to_i64(value: u64, what: &str) -> Result<i64> {
     i64::try_from(value).map_err(|_| StorageError::CorruptRow {
@@ -38,7 +38,7 @@ fn to_i64(value: u64, what: &str) -> Result<i64> {
     })
 }
 
-/// Lit une ligne ; les attributs sont ajoutés ensuite.
+/// Lit une ligne et revalide ses champs.
 fn from_row(row: &Row<'_>) -> rusqlite::Result<std::result::Result<Event, StorageError>> {
     let id: i64 = row.get(0)?;
     let corrupt = |detail: String| StorageError::CorruptRow {
@@ -70,6 +70,7 @@ fn from_row(row: &Row<'_>) -> rusqlite::Result<std::result::Result<Event, Storag
     let message: String = row.get(17)?;
     let raw: String = row.get(18)?;
     let raw_truncated: i64 = row.get(19)?;
+    let attributes: String = row.get(20)?;
 
     Ok((|| {
         let ip = |v: Option<String>| -> std::result::Result<Option<IpAddr>, StorageError> {
@@ -122,7 +123,8 @@ fn from_row(row: &Row<'_>) -> rusqlite::Result<std::result::Result<Event, Storag
                 message,
                 raw,
                 raw_truncated: raw_truncated != 0,
-                attributes: BTreeMap::new(),
+                attributes: serde_json::from_str(&attributes)
+                    .map_err(|e| corrupt(format!("attributs illisibles : {e}")))?,
             },
         })
     })())
@@ -141,47 +143,44 @@ fn insert_one(
         ),
         None => (None, None, None),
     };
-    let inserted = tx.execute(
+    let attributes = serde_json::to_string(&e.attributes).map_err(|err| {
+        StorageError::Domain(evidentyx_core::CoreError::InvalidEvent(err.to_string()))
+    })?;
+    let mut stmt = tx.prepare_cached(
         "INSERT INTO events (investigation_id, evidence_id, byte_offset, line, record, time_us,
                              time_precision, time_basis, kind, host, source_ip, source_port,
                              destination_ip, destination_port, user_name, action, outcome,
-                             message, raw, raw_truncated)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)
+                             message, raw, raw_truncated, attributes)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21)
          ON CONFLICT (evidence_id, byte_offset) DO NOTHING",
-        params![
-            investigation_id.get(),
-            e.source.evidence_id.get(),
-            to_i64(e.source.byte_offset, "décalage")?,
-            e.source.line.map(|v| to_i64(v, "ligne")).transpose()?,
-            e.source.record.map(|v| to_i64(v, "enregistrement")).transpose()?,
-            time_us,
-            precision,
-            basis,
-            e.kind.as_str(),
-            e.host,
-            e.source_ip.map(|ip| ip.to_string()),
-            e.source_port,
-            e.destination_ip.map(|ip| ip.to_string()),
-            e.destination_port,
-            e.user,
-            e.action,
-            e.outcome.map(|o| o.as_str()),
-            e.message,
-            e.raw,
-            e.raw_truncated,
-        ],
     )?;
-    if inserted == 0 {
-        return Ok(false);
-    }
-    let id = tx.last_insert_rowid();
-    let mut stmt = tx.prepare_cached(
-        "INSERT INTO event_attributes (event_id, key, value) VALUES (?1, ?2, ?3)",
-    )?;
-    for (key, value) in &e.attributes {
-        stmt.execute(params![id, key, value])?;
-    }
-    Ok(true)
+    let inserted = stmt.execute(params![
+        investigation_id.get(),
+        e.source.evidence_id.get(),
+        to_i64(e.source.byte_offset, "décalage")?,
+        e.source.line.map(|v| to_i64(v, "ligne")).transpose()?,
+        e.source
+            .record
+            .map(|v| to_i64(v, "enregistrement"))
+            .transpose()?,
+        time_us,
+        precision,
+        basis,
+        e.kind.as_str(),
+        e.host,
+        e.source_ip.map(|ip| ip.to_string()),
+        e.source_port,
+        e.destination_ip.map(|ip| ip.to_string()),
+        e.destination_port,
+        e.user,
+        e.action,
+        e.outcome.map(|o| o.as_str()),
+        e.message,
+        e.raw,
+        e.raw_truncated,
+        attributes,
+    ])?;
+    Ok(inserted > 0)
 }
 
 impl Storage {
@@ -237,7 +236,9 @@ impl Storage {
     ) -> Result<BTreeMap<EvidenceId, u64>> {
         self.investigation(investigation_id)?;
         let mut stmt = self.conn.prepare(
-            "SELECT evidence_id, count(*) FROM events WHERE investigation_id = ?1 GROUP BY evidence_id",
+            "SELECT evidence_id, count(*) FROM events
+             WHERE evidence_id IN (SELECT id FROM evidence WHERE investigation_id = ?1)
+             GROUP BY evidence_id",
         )?;
         let rows = stmt.query_map([investigation_id.get()], |r| {
             Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1)?))
@@ -301,18 +302,6 @@ impl Storage {
         } else {
             None
         };
-        let mut attrs = self.conn.prepare_cached(
-            "SELECT key, value FROM event_attributes WHERE event_id = ?1 ORDER BY key",
-        )?;
-        for e in &mut events {
-            let pairs = attrs.query_map([e.id.get()], |r| {
-                Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
-            })?;
-            for pair in pairs {
-                let (k, v) = pair?;
-                e.event.attributes.insert(k, v);
-            }
-        }
         Ok(EventPage { events, next })
     }
 
@@ -485,10 +474,5 @@ mod tests {
         db.insert_events(ev, &[event(ev, 0, None)]).unwrap();
         db.remove_evidence(ev).unwrap();
         assert_eq!(db.count_events(inv).unwrap(), 0);
-        let orphans: i64 = db
-            .conn
-            .query_row("SELECT count(*) FROM event_attributes", [], |r| r.get(0))
-            .unwrap();
-        assert_eq!(orphans, 0);
     }
 }

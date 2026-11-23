@@ -144,12 +144,14 @@ impl Storage {
 
     /// Supprime définitivement une enquête.
     pub fn delete_investigation(&mut self, id: InvestigationId) -> Result<()> {
-        let deleted = self
-            .conn
-            .execute("DELETE FROM investigations WHERE id = ?1", [id.get()])?;
+        let tx = self.conn.transaction()?;
+        // Événements d'abord : la cascade ligne à ligne serait plus lente.
+        tx.execute("DELETE FROM events WHERE investigation_id = ?1", [id.get()])?;
+        let deleted = tx.execute("DELETE FROM investigations WHERE id = ?1", [id.get()])?;
         if deleted == 0 {
             return Err(StorageError::NotFound(id));
         }
+        tx.commit()?;
         Ok(())
     }
 }
