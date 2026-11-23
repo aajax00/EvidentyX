@@ -39,7 +39,7 @@
 | `evidentyx-core` | Types de domaine partagés, validation, erreurs | ✅ Initialisé |
 | `evidentyx-desktop` (`apps/desktop/src-tauri`) | Hôte Tauri : ouvre la base locale, expose le moteur et les enquêtes à l'interface par des commandes typées, sans logique métier | ✅ Enquêtes |
 | `evidentyx-storage` | Persistance SQLite, migrations versionnées, enquêtes (journal d'audit : phase 4) | ✅ Initialisé |
-| `evidentyx-parser` | Analyseurs de formats (JSON, CSV, Syslog, Apache, Nginx, PCAP, EVTX) | ⚪ Phase 2 |
+| `evidentyx-parser` | Cadre de lecture des formats vers le modèle d'événement ; JSON / JSON Lines (CSV, Syslog, Apache, Nginx, PCAP à venir) ([ADR 0005](decisions/0005-cadre-de-lecture.md)) | ✅ JSON |
 | `evidentyx-normalizer` | Conversion vers le modèle d'événement canonique | ⚪ Phase 2-3 |
 | `evidentyx-evidence` | Lecture en flux et en lecture seule des preuves, empreinte SHA-256, vérification d'intégrité ([ADR 0003](decisions/0003-preuves-et-integrite.md)) | ✅ Initialisé |
 | `evidentyx-timeline` | Requêtes chronologiques, pagination, filtres | ⚪ Phase 3 |
@@ -66,6 +66,7 @@ Tous les formats de preuve sont convertis vers un **événement canonique** (`ev
 | `set_investigation_status` | Archivage, réactivation |
 | `delete_investigation` | Suppression définitive |
 | `list_evidence`, `add_evidence`, `verify_evidence`, `remove_evidence` | Preuves d'une enquête : liste, ajout avec empreinte SHA-256, vérification d'intégrité, retrait (le fichier n'est jamais touché) |
+| `analyze_evidence` | Reconnaît le format d'une preuve, extrait ses événements, vérifie l'empreinte pendant la lecture |
 | `get_settings`, `update_settings` | Lecture et enregistrement des réglages (validation par `evidentyx-core`) |
 
 Les erreurs sont renvoyées sous la forme `{ code, message, field? }` : `code` est stable (`validation`, `not_found`, `archived_read_only`…), `message` est en français, `field` désigne le champ de formulaire concerné. La base `evidentyx.sqlite` se trouve dans le dossier de données de l'application (par exemple `~/.local/share/org.evidentyx.desktop/` sous Linux).

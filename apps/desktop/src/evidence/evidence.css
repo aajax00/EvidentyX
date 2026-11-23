@@ -28,7 +28,7 @@
 
 .evidence-item {
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) 80px 200px 150px 64px;
+  grid-template-columns: 32px minmax(0, 1fr) 80px 200px 150px 92px;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2) 0;
@@ -138,7 +138,7 @@
 
 @media (max-width: 1100px) {
   .evidence-item {
-    grid-template-columns: 32px minmax(0, 1fr) 70px 130px 64px;
+    grid-template-columns: 32px minmax(0, 1fr) 70px 130px 92px;
   }
 
   .evidence-item__digest {

@@ -89,6 +89,7 @@ impl From<EvidenceError> for CommandError {
             EvidenceError::NotFound(_) => "file_not_found",
             EvidenceError::NotAFile(_) => "not_a_file",
             EvidenceError::Cancelled => "cancelled",
+            EvidenceError::Changed(_) => "evidence_changed",
             EvidenceError::NonUtf8Path(_) | EvidenceError::Io { .. } => "io",
         };
         Self::new(code, capitalize(&e.to_string()))

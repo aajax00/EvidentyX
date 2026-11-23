@@ -12,6 +12,8 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 - Crate `evidentyx-evidence` (lecture en flux, progression, annulation) ; migration 0003 (table `evidence`) ; commandes `list_evidence`, `add_evidence`, `verify_evidence`, `remove_evidence`.
 - Modèle d'événement canonique (`evidentyx-core`) : référence exacte à la source (preuve, décalage, ligne ou enregistrement), horodatage UTC avec précision et base (fuseau explicite, supposé UTC, année déduite), champs normalisés, texte brut et attributs d'origine conservés ([ADR 0004](docs/decisions/0004-modele-evenement.md)).
 - Stockage des événements (migration 0004) : insertion par lot transactionnelle sans doublon au réimport, chronologie paginée déterministe, suppression en cascade ; nombre d'événements affiché pour chaque preuve.
+- Analyse des preuves : bouton « Analyser » qui reconnaît le format et extrait les événements ; lecture refusée si la taille ou l'empreinte SHA-256 du fichier ne correspond plus (événements retirés, preuve marquée « modifiée ») ; réanalyse sans doublon ; bilan (événements, lignes illisibles avec leur numéro) ([ADR 0005](docs/decisions/0005-cadre-de-lecture.md)).
+- Crate `evidentyx-parser` : cadre commun (détection, lecture en flux, erreurs par enregistrement, progression, annulation), correspondance des champs vers le modèle d'événement, lecture des heures ISO 8601 / RFC 3339 et époque Unix ; formats JSON Lines, tableau JSON et objets JSON concaténés.
 
 ## [0.1.0] - 2026-11-19
 

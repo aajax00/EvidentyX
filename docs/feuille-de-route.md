@@ -20,7 +20,7 @@ Objectif : importer des preuves dans une enquête et en extraire des événement
 
 - [x] **Étape 2.1** — Crate `evidence` : enregistrement d'une preuve dans une enquête (chemin, taille, dates), empreinte SHA-256 calculée en flux, vérification d'intégrité ; fichiers ouverts en lecture seule, jamais copiés en base
 - [x] **Étape 2.2** — Modèle d'événement canonique : horodatage UTC avec précision et incertitude, référence à la source (preuve, décalage, ligne ou paquet), champs normalisés (hôte, adresses, utilisateur, action, résultat), champs bruts conservés ; stockage des événements (ADR)
-- [ ] **Étape 2.3** — Crate `parser` : cadre commun (détection du format, lecture en flux, erreurs par ligne sans interrompre l'import), JSON et JSON Lines
+- [x] **Étape 2.3** — Crate `parser` : cadre commun (détection du format, lecture en flux, erreurs par ligne sans interrompre l'import), JSON et JSON Lines
 - [ ] **Étape 2.4** — CSV : séparateur et en-têtes détectés, choix des colonnes d'horodatage
 - [ ] **Étape 2.5** — Syslog RFC 3164 et RFC 5424
 - [ ] **Étape 2.6** — Journaux d'accès Apache et Nginx (formats common et combined)
