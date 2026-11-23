@@ -32,7 +32,7 @@ impl Scalar {
     }
 }
 
-const TIME: &[&str] = &[
+pub(crate) const TIME: &[&str] = &[
     "timestamp",
     "@timestamp",
     "timestamputc",
@@ -47,6 +47,9 @@ const TIME: &[&str] = &[
     "timegenerated",
     "starttime",
     "eventdate",
+    "lastrun",
+    "horodatage",
+    "dateheure",
 ];
 const HOST: &[&str] = &[
     "host",
@@ -58,6 +61,9 @@ const HOST: &[&str] = &[
     "server",
     "machine",
     "destinationhost",
+    "poste",
+    "hôte",
+    "machinename",
 ];
 const SRC_IP: &[&str] = &[
     "sourceip",
@@ -103,6 +109,8 @@ const USER: &[&str] = &[
     "targetusername",
     "subjectusername",
     "usr",
+    "utilisateur",
+    "compte",
 ];
 const ACTION: &[&str] = &[
     "action",
@@ -112,6 +120,9 @@ const ACTION: &[&str] = &[
     "operation",
     "eventname",
     "eventaction",
+    "évènement",
+    "événement",
+    "evenement",
 ];
 const OUTCOME: &[&str] = &["outcome", "status", "result", "eventoutcome"];
 const MESSAGE: &[&str] = &[
@@ -122,13 +133,35 @@ const MESSAGE: &[&str] = &[
     "log",
     "text",
     "details",
+    "mapdescription",
+    "commentaire",
+    "libellé",
+    "libelle",
 ];
 
-fn norm(key: &str) -> String {
-    key.chars()
-        .filter(|c| !matches!(c, '_' | '-' | '.' | ' '))
-        .flat_map(char::to_lowercase)
-        .collect()
+pub(crate) fn norm(key: &str) -> String {
+    // Les mêmes noms de champs reviennent à chaque enregistrement : la forme
+    // normalisée est mémorisée (cache borné, par fil d'exécution).
+    thread_local! {
+        static CACHE: std::cell::RefCell<std::collections::HashMap<String, String>> =
+            std::cell::RefCell::new(std::collections::HashMap::new());
+    }
+    CACHE.with(|cache| {
+        if let Some(n) = cache.borrow().get(key) {
+            return n.clone();
+        }
+        let n: String = key
+            .chars()
+            .filter(|c| !matches!(c, '_' | '-' | '.' | ' '))
+            .flat_map(char::to_lowercase)
+            .collect();
+        let mut cache = cache.borrow_mut();
+        if cache.len() >= 4096 {
+            cache.clear();
+        }
+        cache.insert(key.to_owned(), n.clone());
+        n
+    })
 }
 
 /// Champs restant à consommer, indexés par nom normalisé.
@@ -297,17 +330,40 @@ fn infer_kind(action: Option<&str>, message: Option<&str>, keys: &[String]) -> E
             return *kind;
         }
     }
-    let keys = keys
+    kind_from_keys(keys)
+}
+
+/// Catégorie déduite des seuls noms de champs ; mémorisée par jeu de noms
+/// (identique d'une ligne à l'autre dans un même fichier).
+fn kind_from_keys(keys: &[String]) -> EventKind {
+    use std::hash::{Hash, Hasher};
+    thread_local! {
+        static CACHE: std::cell::RefCell<std::collections::HashMap<u64, EventKind>> =
+            std::cell::RefCell::new(std::collections::HashMap::new());
+    }
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    keys.hash(&mut h);
+    let sig = h.finish();
+    if let Some(k) = CACHE.with(|c| c.borrow().get(&sig).copied()) {
+        return k;
+    }
+    let joined = keys
         .iter()
         .map(|k| k.to_lowercase())
         .collect::<Vec<_>>()
         .join(" ");
-    for (kind, words) in KIND_KEYWORDS {
-        if words.iter().any(|w| keys.contains(w)) {
-            return *kind;
+    let kind = KIND_KEYWORDS
+        .iter()
+        .find(|(_, words)| words.iter().any(|w| joined.contains(w)))
+        .map_or(EventKind::Other, |(k, _)| *k);
+    CACHE.with(|c| {
+        let mut c = c.borrow_mut();
+        if c.len() >= 1024 {
+            c.clear();
         }
-    }
-    EventKind::Other
+        c.insert(sig, kind);
+    });
+    kind
 }
 
 fn clip_chars(s: &str, max: usize) -> String {
@@ -320,8 +376,25 @@ fn clip_chars(s: &str, max: usize) -> String {
     }
 }
 
+/// Indications propres à un fichier (ex. colonne d'horodatage choisie pour un CSV).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Hints {
+    /// Champ à essayer en premier pour l'horodatage.
+    pub time_field: Option<String>,
+}
+
 /// Construit un événement à partir des champs d'un enregistrement.
 pub fn map_fields(source: SourceRef, raw: &str, fields: Vec<(String, Scalar)>) -> NewEvent {
+    map_fields_with(source, raw, fields, &Hints::default())
+}
+
+/// Comme `map_fields`, avec des indications propres au fichier.
+pub fn map_fields_with(
+    source: SourceRef,
+    raw: &str,
+    fields: Vec<(String, Scalar)>,
+    hints: &Hints,
+) -> NewEvent {
     let keys: Vec<String> = fields.iter().map(|(k, _)| k.clone()).collect();
     let mut f = Fields {
         by_norm: BTreeMap::new(),
@@ -332,7 +405,12 @@ pub fn map_fields(source: SourceRef, raw: &str, fields: Vec<(String, Scalar)>) -
         f.values.insert(k, v);
     }
 
-    let time = f.take_with(TIME, parse_time);
+    let hinted = hints.time_field.as_deref().and_then(|k| {
+        let t = parse_time(f.values.get(k)?)?;
+        f.take(k);
+        Some(t)
+    });
+    let time = hinted.or_else(|| f.take_with(TIME, parse_time));
     let host = f.take_with(HOST, non_empty_text);
     let source_ip = f.take_with(SRC_IP, parse_ip);
     let destination_ip = f.take_with(DST_IP, parse_ip);

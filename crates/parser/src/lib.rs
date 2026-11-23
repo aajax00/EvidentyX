@@ -11,13 +11,14 @@
 //! - **progression** et **annulation** ;
 //! - chaque événement garde sa référence exacte à la source.
 //!
-//! Formats pris en charge : JSON Lines, tableau JSON, objets JSON concaténés.
+//! Formats pris en charge : JSON Lines, tableau JSON, objets JSON concaténés, CSV.
 
+mod delimited;
 mod fields;
 mod json;
 pub mod time;
 
-pub use fields::{map_fields, Scalar};
+pub use fields::{map_fields, map_fields_with, Hints, Scalar};
 
 use evidentyx_core::{EvidenceId, NewEvent};
 use std::fmt;
@@ -38,6 +39,8 @@ pub enum Format {
     JsonArray,
     /// Objets JSON successifs, éventuellement sur plusieurs lignes.
     JsonConcatenated,
+    /// Valeurs séparées (virgule, point-virgule, tabulation ou barre verticale).
+    Csv,
 }
 
 impl Format {
@@ -46,6 +49,7 @@ impl Format {
             Self::JsonLines => "json_lines",
             Self::JsonArray => "json_array",
             Self::JsonConcatenated => "json_concatenated",
+            Self::Csv => "csv",
         }
     }
 
@@ -54,6 +58,7 @@ impl Format {
             Self::JsonLines => "JSON Lines",
             Self::JsonArray => "Tableau JSON",
             Self::JsonConcatenated => "Objets JSON",
+            Self::Csv => "CSV",
         }
     }
 }
@@ -61,7 +66,7 @@ impl Format {
 /// Détecte le format d'après le nom du fichier et ses premiers octets.
 /// Renvoie `None` si aucun format pris en charge ne correspond.
 pub fn detect(file_name: &str, head: &[u8]) -> Option<Format> {
-    json::detect(file_name, head)
+    json::detect(file_name, head).or_else(|| delimited::detect(file_name, head))
 }
 
 /// Enregistrement illisible, signalé sans interrompre la lecture.
@@ -88,10 +93,15 @@ pub struct ParseReport {
     pub first_errors: Vec<RecordError>,
     /// Octets lus.
     pub bytes: u64,
+    /// Champ retenu pour l'horodatage quand le format le choisit pour tout le
+    /// fichier (CSV) ; `None` sinon.
+    pub time_field: Option<String>,
+    /// Structure reconnue (ex. « séparateur ; · 17 colonnes »).
+    pub layout: Option<String>,
 }
 
 impl ParseReport {
-    fn new(format: Format) -> Self {
+    pub(crate) fn new(format: Format) -> Self {
         Self {
             format,
             records: 0,
@@ -99,10 +109,12 @@ impl ParseReport {
             errors: 0,
             first_errors: Vec::new(),
             bytes: 0,
+            time_field: None,
+            layout: None,
         }
     }
 
-    fn error(&mut self, line: u64, byte_offset: u64, message: impl Into<String>) {
+    pub(crate) fn error(&mut self, line: u64, byte_offset: u64, message: impl Into<String>) {
         self.errors += 1;
         if self.first_errors.len() < MAX_REPORTED_ERRORS {
             self.first_errors.push(RecordError {
@@ -167,5 +179,8 @@ pub fn parse(
     ctx: ParseContext<'_>,
     sink: &mut dyn FnMut(NewEvent) -> Result<(), String>,
 ) -> Result<ParseReport, ParseError> {
-    json::parse(format, reader, ctx, sink)
+    match format {
+        Format::Csv => delimited::parse(reader, ctx, sink),
+        _ => json::parse(format, reader, ctx, sink),
+    }
 }

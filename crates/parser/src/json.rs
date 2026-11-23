@@ -142,6 +142,7 @@ pub fn parse(
         Format::JsonArray | Format::JsonConcatenated => {
             values(&mut reader, &mut em, format == Format::JsonArray)?
         }
+        Format::Csv => unreachable!("le CSV est lu par le module delimited"),
     }
     Ok(em.report)
 }
@@ -520,7 +521,7 @@ pas du json\n\
             detect("x.json", b"{\n  \"a\": 1\n}\n"),
             Some(Format::JsonConcatenated)
         );
-        assert_eq!(detect("x.csv", b"a,b,c\n1,2,3"), None);
+        assert_eq!(detect("x.csv", b"a,b,c\n1,2,3"), Some(Format::Csv));
         assert_eq!(
             detect("x.json", "\u{feff}[".as_bytes()),
             Some(Format::JsonArray)

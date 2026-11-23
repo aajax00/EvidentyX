@@ -18,6 +18,17 @@ Chaque format de preuve (JSON, CSV, Syslog, journaux web, PCAP) doit produire de
 7. **Analyse d'une preuve** (commande `analyze_evidence`) : fichier ouvert en lecture seule, taille vérifiée, **empreinte SHA-256 recalculée pendant la lecture** ; si elle diffère de l'empreinte enregistrée, les événements extraits sont retirés, la preuve passe en « modifiée » et l'analyse est refusée. Événements enregistrés par lots de 2 000 ; une réanalyse n'ajoute que ce qui manque.
 8. **Lecture des heures sans dépendance** (calendrier grégorien, décalages horaires) : bornes de plausibilité 1970–2100.
 
+## Complément — CSV (étape 2.4)
+
+- Crate [`csv`](https://crates.io/crates/csv) (MIT / Unlicense) : conforme RFC 4180, rapide, positions d'enregistrement.
+- **Séparateur** deviné sur les 50 premiers enregistrements (découpage respectant les guillemets) : celui qui donne au moins 2 colonnes et le nombre de colonnes le plus constant (≥ 80 % des enregistrements).
+- **En-tête** reconnu si la première ligne ne contient que des noms (non vides, non numériques, non datés, distincts) ; sinon colonnes `colonne_1`, `colonne_2`…
+- **Heure** choisie une fois par fichier sur la première ligne de données : alias connus, puis colonnes date et heure séparées (combinées), puis toute colonne au nom évocateur. La colonne retenue figure dans le bilan.
+- **CRLF** : la crate `csv` donne alors des numéros de ligne faux et un décalage posé sur le `\n` précédent ; un lecteur intermédiaire note les fins de ligne lues et recalcule ligne et décalage exacts (mémoire bornée).
+- **Texte brut** : enregistrement reconstitué (mêmes valeurs, séparateur d'origine, guillemets normalisés) ; le décalage et la ligne désignent l'original.
+- **EZ Tools** : les colonnes d'EvtxECmd (`TimeCreated`, `Computer`, `UserName`, `MapDescription`…) sont reconnues par les alias communs ; les sorties à plusieurs horodatages par ligne (MFTECmd) relèvent d'une évolution ultérieure.
+- **Performances mesurées** (compilation optimisée, lecture seule) : 70 000 lignes de journaux en 2 s ; fichiers de flux CIC-IDS2017 à 79 colonnes ≈ 5 700 lignes/s — optimisation prévue en phase 5.
+
 ## Conséquences
 
 - Les étapes 2.4 à 2.7 ajoutent un module par format en réutilisant le cadre et `map_fields`.
