@@ -6,6 +6,11 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ## [Non publié]
 
+### Corrigé
+
+- Fenêtre figée (« Forcer à quitter ») lors de la suppression d'une preuve ou d'une enquête et à l'ouverture d'une enquête volumineuse : les accès à la base se font hors du fil de la fenêtre, avec indicateur d'attente.
+- Suppression très lente : attributs d'événement regroupés en une colonne (migration 0005, données conservées ; une base volumineuse peut demander une minute ou plus au premier lancement).
+
 ### Ajouté
 
 - Preuves : ajout de fichiers à une enquête (sélecteur ou glisser-déposer), empreinte SHA-256 calculée en flux et en lecture seule, taille et dates ; vérification d'intégrité (intègre, modifiée, introuvable) ; retrait sans jamais toucher au fichier ; contenu en double refusé ([ADR 0003](docs/decisions/0003-preuves-et-integrite.md)).

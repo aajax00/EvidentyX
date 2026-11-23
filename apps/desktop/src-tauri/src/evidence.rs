@@ -118,7 +118,8 @@ async fn fingerprint_in_background(path: PathBuf) -> CommandResult<Fingerprint> 
 
 // ——— Commandes Tauri ———
 
-#[tauri::command]
+// Hors du fil de la fenêtre : la base peut être occupée.
+#[tauri::command(async)]
 pub fn list_evidence(
     state: tauri::State<'_, AppState>,
     investigation_id: i64,
@@ -156,7 +157,8 @@ pub async fn verify_evidence(
     state.with_storage(|s| record_verification(s, &evidence, digest.as_ref()))
 }
 
-#[tauri::command]
+// Hors du fil de la fenêtre : la base peut être occupée.
+#[tauri::command(async)]
 pub fn remove_evidence(state: tauri::State<'_, AppState>, id: i64) -> CommandResult<()> {
     state.with_storage(|s| Ok(s.remove_evidence(EvidenceId::new(id))?))
 }

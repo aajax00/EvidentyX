@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from "react";
-import { ToastProvider } from "./components/ui";
+import { useEffect, useState, type ReactNode } from "react";
+import { Spinner, ToastProvider } from "./components/ui";
 import { EngineProvider } from "./engine";
 import { SplashScreen } from "./motion/SplashScreen";
 import { useReducedMotion } from "./motion/useReducedMotion";
@@ -43,13 +43,36 @@ function LaunchGate({ children }: { children: ReactNode }) {
   const reducedMotion = useReducedMotion();
   const [splashDone, setSplashDone] = useState(false);
 
-  if (!loaded) return null;
+  if (!loaded) return <DatabaseWait />;
   const showSplash = settings.splashScreen && !reducedMotion && !splashDone;
   return (
     <>
       {children}
       {showSplash && <SplashScreen onDone={() => setSplashDone(true)} />}
     </>
+  );
+}
+
+/**
+ * Attente de la base : rien pendant 600 ms (cas courant), puis un message. La
+ * mise à jour d'une grosse base peut durer une minute ou plus, une seule fois.
+ */
+function DatabaseWait() {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const t = window.setTimeout(() => setVisible(true), 600);
+    return () => window.clearTimeout(t);
+  }, []);
+  if (!visible) return null;
+  return (
+    <div className="database-wait" role="status">
+      <Spinner label="Ouverture de la base" />
+      <p>Ouverture de la base locale…</p>
+      <p className="text-muted">
+        Après une mise à jour, une base volumineuse peut demander une minute ou plus, une seule fois. Ne fermez pas
+        l'application.
+      </p>
+    </div>
   );
 }
 

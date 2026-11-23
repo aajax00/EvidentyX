@@ -4,21 +4,30 @@ use crate::error::CommandError;
 use evidentyx_storage::Storage;
 use serde::Serialize;
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex, OnceLock};
 
 /// Stockage ouvert au démarrage. Si l'ouverture échoue (base d'une version
 /// plus récente, disque inaccessible…), l'application démarre quand même et
-/// chaque commande renvoie l'erreur au lieu de planter.
+/// chaque commande renvoie l'erreur au lieu de planter. L'ouverture (et une
+/// éventuelle migration, longue sur une grosse base) se fait dans un fil dédié :
+/// la fenêtre reste réactive, les commandes attendent la fin de l'ouverture.
 pub struct AppState {
-    storage: Result<Mutex<Storage>, CommandError>,
+    storage: Arc<OnceLock<Result<Mutex<Storage>, CommandError>>>,
     path: PathBuf,
 }
 
 impl AppState {
     pub fn open(path: PathBuf) -> Self {
-        let storage = Storage::open(&path)
-            .map(Mutex::new)
-            .map_err(CommandError::from);
+        let storage = Arc::new(OnceLock::new());
+        let (slot, db) = (Arc::clone(&storage), path.clone());
+        std::thread::spawn(move || {
+            // Une panique à l'ouverture deviendrait sinon une attente sans fin.
+            let opened = std::panic::catch_unwind(|| Storage::open(&db))
+                .unwrap_or_else(|_| Err(evidentyx_storage::StorageError::OpenFailed))
+                .map(Mutex::new)
+                .map_err(CommandError::from);
+            let _ = slot.set(opened);
+        });
         Self { storage, path }
     }
 
@@ -26,7 +35,7 @@ impl AppState {
         &self,
         f: impl FnOnce(&mut Storage) -> Result<T, CommandError>,
     ) -> Result<T, CommandError> {
-        let mutex = self.storage.as_ref().map_err(Clone::clone)?;
+        let mutex = self.storage.wait().as_ref().map_err(Clone::clone)?;
         // Un verrou empoisonné signifie qu'une commande a paniqué en cours
         // d'opération : la connexion SQLite reste cohérente (transactions),
         // on peut donc continuer à l'utiliser.
@@ -56,7 +65,8 @@ pub struct StorageInfo {
     pub error: Option<String>,
 }
 
-#[tauri::command]
+// Hors du fil de la fenêtre : la base peut être occupée.
+#[tauri::command(async)]
 pub fn storage_info(state: tauri::State<'_, AppState>) -> StorageInfo {
     state.info()
 }

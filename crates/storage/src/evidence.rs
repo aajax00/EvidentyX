@@ -164,8 +164,10 @@ impl Storage {
         let evidence = self.evidence(id)?;
         let investigation = self.investigation(evidence.investigation_id)?;
         investigation.ensure_editable()?;
-        self.conn
-            .execute("DELETE FROM evidence WHERE id = ?1", [id.get()])?;
+        let tx = self.conn.transaction()?;
+        tx.execute("DELETE FROM events WHERE evidence_id = ?1", [id.get()])?;
+        tx.execute("DELETE FROM evidence WHERE id = ?1", [id.get()])?;
+        tx.commit()?;
         self.touch_investigation(investigation.id, investigation.updated_at)
     }
 }

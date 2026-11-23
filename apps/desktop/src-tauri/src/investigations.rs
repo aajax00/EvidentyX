@@ -118,7 +118,8 @@ pub fn delete(storage: &mut Storage, id: i64) -> CommandResult<()> {
 
 // ——— Commandes Tauri ———
 
-#[tauri::command]
+// Hors du fil de la fenêtre : la base peut être occupée.
+#[tauri::command(async)]
 pub fn list_investigations(
     state: tauri::State<'_, AppState>,
     query: QueryDto,
@@ -126,7 +127,8 @@ pub fn list_investigations(
     state.with_storage(|s| list(s, query))
 }
 
-#[tauri::command]
+// Hors du fil de la fenêtre : la base peut être occupée.
+#[tauri::command(async)]
 pub fn get_investigation(
     state: tauri::State<'_, AppState>,
     id: i64,
@@ -134,7 +136,8 @@ pub fn get_investigation(
     state.with_storage(|s| get(s, id))
 }
 
-#[tauri::command]
+// Hors du fil de la fenêtre : la base peut être occupée.
+#[tauri::command(async)]
 pub fn create_investigation(
     state: tauri::State<'_, AppState>,
     name: String,
@@ -143,7 +146,8 @@ pub fn create_investigation(
     state.with_storage(|s| create(s, &name, &description))
 }
 
-#[tauri::command]
+// Hors du fil de la fenêtre : la base peut être occupée.
+#[tauri::command(async)]
 pub fn rename_investigation(
     state: tauri::State<'_, AppState>,
     id: i64,
@@ -152,7 +156,8 @@ pub fn rename_investigation(
     state.with_storage(|s| rename(s, id, &name))
 }
 
-#[tauri::command]
+// Hors du fil de la fenêtre : la base peut être occupée.
+#[tauri::command(async)]
 pub fn update_investigation_description(
     state: tauri::State<'_, AppState>,
     id: i64,
@@ -161,7 +166,8 @@ pub fn update_investigation_description(
     state.with_storage(|s| update_description(s, id, &description))
 }
 
-#[tauri::command]
+// Hors du fil de la fenêtre : la base peut être occupée.
+#[tauri::command(async)]
 pub fn set_investigation_status(
     state: tauri::State<'_, AppState>,
     id: i64,
@@ -170,7 +176,8 @@ pub fn set_investigation_status(
     state.with_storage(|s| set_status(s, id, &status))
 }
 
-#[tauri::command]
+// Hors du fil de la fenêtre : la base peut être occupée.
+#[tauri::command(async)]
 pub fn delete_investigation(state: tauri::State<'_, AppState>, id: i64) -> CommandResult<()> {
     state.with_storage(|s| delete(s, id))
 }

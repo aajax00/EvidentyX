@@ -63,12 +63,14 @@ pub fn update(storage: &mut Storage, dto: SettingsDto) -> Result<SettingsDto, Co
     Ok(storage.save_settings(&settings)?.into())
 }
 
-#[tauri::command]
+// Hors du fil de la fenêtre : la base peut être occupée.
+#[tauri::command(async)]
 pub fn get_settings(state: tauri::State<'_, AppState>) -> Result<SettingsDto, CommandError> {
     state.with_storage(|s| get(s))
 }
 
-#[tauri::command]
+// Hors du fil de la fenêtre : la base peut être occupée.
+#[tauri::command(async)]
 pub fn update_settings(
     state: tauri::State<'_, AppState>,
     settings: SettingsDto,

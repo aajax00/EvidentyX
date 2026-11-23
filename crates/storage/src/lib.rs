@@ -59,6 +59,11 @@ impl Storage {
     fn init(mut conn: Connection, clock: Box<dyn Clock>) -> Result<Self> {
         conn.pragma_update(None, "foreign_keys", true)?;
         conn.busy_timeout(Duration::from_secs(5))?;
+        // Cache de 64 Mio : les suppressions et insertions massives touchent
+        // beaucoup de pages d'index.
+        conn.pragma_update(None, "cache_size", -65_536)?;
+        // Le journal WAL reprend une taille raisonnable après une grosse opération.
+        conn.pragma_update(None, "journal_size_limit", 67_108_864)?;
         migrations::migrate(&mut conn)?;
         Ok(Self { conn, clock })
     }

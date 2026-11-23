@@ -10,6 +10,8 @@ pub enum StorageError {
     Sqlite(rusqlite::Error),
     /// Règle métier refusée (validation, transition, lecture seule).
     Domain(CoreError),
+    /// L'ouverture de la base a échoué de façon inattendue.
+    OpenFailed,
     /// Aucune enquête ne porte cet identifiant.
     NotFound(InvestigationId),
     /// Aucune preuve ne porte cet identifiant.
@@ -34,6 +36,7 @@ impl fmt::Display for StorageError {
         match self {
             Self::Sqlite(e) => write!(f, "erreur de la base de données : {e}"),
             Self::Domain(e) => e.fmt(f),
+            Self::OpenFailed => write!(f, "ouverture de la base impossible (erreur interne)"),
             Self::NotFound(id) => write!(f, "enquête introuvable (identifiant {id})"),
             Self::EvidenceNotFound(id) => write!(f, "preuve introuvable (identifiant {id})"),
             Self::DuplicateEvidence { file_name, .. } => write!(
