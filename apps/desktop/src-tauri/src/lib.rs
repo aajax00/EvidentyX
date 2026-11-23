@@ -4,6 +4,7 @@
 //! typées. Aucune règle métier ne doit y vivre : elle appartient aux crates
 //! du workspace (`evidentyx-core`, etc.).
 
+mod analysis;
 mod error;
 mod evidence;
 mod investigations;
@@ -68,6 +69,7 @@ pub fn run() {
             evidence::add_evidence,
             evidence::verify_evidence,
             evidence::remove_evidence,
+            analysis::analyze_evidence,
         ])
         .run(tauri::generate_context!())
         .expect("échec du démarrage de l'application EVIDENTYX");

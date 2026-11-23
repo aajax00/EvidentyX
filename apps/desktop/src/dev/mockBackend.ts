@@ -5,7 +5,7 @@
 // Les règles reproduites ici sont volontairement minimales : la référence est
 // le moteur Rust (evidentyx-core, evidentyx-storage). Exclu de la version publiée.
 
-import type { Evidence, Investigation, InvestigationQuery, Settings, StorageInfo } from "../api";
+import type { AnalysisReport, Evidence, Investigation, InvestigationQuery, Settings, StorageInfo } from "../api";
 
 const DAY = 86_400_000;
 const now = Date.now();
@@ -62,7 +62,7 @@ const evidence: Evidence[] = [
 ];
 let nextEvidenceId = 2;
 let demoPick = 0;
-const DEMO_FILES = ["/preuves/demo/auth.log", "/preuves/demo/capture-dmz.pcap", "/preuves/demo/pare-feu.csv"];
+const DEMO_FILES = ["/preuves/demo/auth.jsonl", "/preuves/demo/capture-dmz.pcap", "/preuves/demo/pare-feu.csv"];
 
 /** Sélection fictive de fichiers (mode démonstration). */
 export function demoPickFiles(): string[] {
@@ -155,6 +155,22 @@ export async function mockInvoke<T>(command: string, args: Record<string, unknow
         editable(find(e.investigationId));
         evidence.splice(evidence.indexOf(e), 1);
         return null;
+      }
+      case "analyze_evidence": {
+        const e = evidence.find((x) => x.id === args.evidenceId) ?? fail("not_found", "Preuve introuvable");
+        editable(find(e.investigationId));
+        if (!/\.(jsonl?|ndjson)$/i.test(e.fileName))
+          fail("unsupported_format", "Format non reconnu pour l'instant : seuls JSON et JSON Lines sont lus.");
+        const before = e.eventCount;
+        e.eventCount = 1240;
+        return {
+          format: "JSON Lines",
+          records: 1243,
+          inserted: e.eventCount - before,
+          duplicates: before,
+          errors: 3,
+          firstErrors: [{ line: 57, byteOffset: 9120, message: "JSON invalide : EOF while parsing an object" }],
+        } satisfies AnalysisReport;
       }
       case "get_settings":
         return { ...settings };

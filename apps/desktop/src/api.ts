@@ -30,6 +30,9 @@ export interface CommandError {
     | "not_a_file"
     | "cancelled"
     | "io"
+    | "evidence_changed"
+    | "unsupported_format"
+    | "parse"
     | "unavailable";
   message: string;
   field?: "name" | "description";
@@ -206,4 +209,21 @@ export async function pickEvidenceFiles(): Promise<string[]> {
     return demoPickFiles();
   }
   return [];
+}
+
+// ——— Analyse ———
+
+/** Miroir de `AnalysisReportDto` (src-tauri/src/analysis.rs). */
+export interface AnalysisReport {
+  format: string;
+  records: number;
+  inserted: number;
+  duplicates: number;
+  errors: number;
+  firstErrors: Array<{ line: number; byteOffset: number; message: string }>;
+}
+
+/** Lit la preuve (format reconnu automatiquement) et enregistre ses événements. */
+export function analyzeEvidence(evidenceId: number): Promise<AnalysisReport> {
+  return call("analyze_evidence", { evidenceId });
 }

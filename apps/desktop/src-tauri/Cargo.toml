@@ -20,6 +20,7 @@ tauri-build = { version = "2.6", features = [] }
 evidentyx-core = { path = "../../../crates/core" }
 evidentyx-storage = { path = "../../../crates/storage" }
 evidentyx-evidence = { path = "../../../crates/evidence" }
+evidentyx-parser = { path = "../../../crates/parser" }
 # Sélecteur de fichiers natif (plugin officiel Tauri).
 tauri-plugin-dialog = "2.8"
 tauri = { version = "2.11", features = [] }

@@ -44,6 +44,8 @@ pub enum EvidenceError {
     NonUtf8Path(PathBuf),
     /// Lecture interrompue à la demande de l'utilisateur.
     Cancelled,
+    /// Le fichier ne correspond plus à la preuve enregistrée (taille ou empreinte).
+    Changed(PathBuf),
     /// Autre erreur d'entrée/sortie (droits, disque…).
     Io { path: PathBuf, source: io::Error },
 }
@@ -59,6 +61,11 @@ impl fmt::Display for EvidenceError {
                 p.display()
             ),
             Self::Cancelled => write!(f, "lecture annulée"),
+            Self::Changed(p) => write!(
+                f,
+                "le fichier a changé depuis son enregistrement (taille ou empreinte différente) : {}",
+                p.display()
+            ),
             Self::Io { path, source } => {
                 write!(f, "lecture impossible de {} : {source}", path.display())
             }
@@ -147,6 +154,54 @@ pub fn fingerprint(
         sha256: Sha256Digest::from_bytes(digest),
         modified_at,
     })
+}
+
+/// Lecteur qui calcule l'empreinte SHA-256 de tout ce qui le traverse :
+/// permet de vérifier qu'un fichier lu (par exemple pour en extraire les
+/// événements) est bien celui dont l'empreinte a été enregistrée.
+pub struct HashingReader<R> {
+    inner: R,
+    hasher: Sha256,
+    read: u64,
+}
+
+impl<R: Read> HashingReader<R> {
+    pub fn new(inner: R) -> Self {
+        Self {
+            inner,
+            hasher: Sha256::new(),
+            read: 0,
+        }
+    }
+
+    /// Octets lus jusqu'ici.
+    pub fn bytes_read(&self) -> u64 {
+        self.read
+    }
+
+    /// Empreinte de tout ce qui a été lu.
+    pub fn finish(self) -> Sha256Digest {
+        Sha256Digest::from_bytes(self.hasher.finalize().into())
+    }
+}
+
+impl<R: Read> Read for HashingReader<R> {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        let n = self.inner.read(buf)?;
+        self.hasher.update(&buf[..n]);
+        self.read += n as u64;
+        Ok(n)
+    }
+}
+
+/// Ouvre une preuve en lecture seule, en vérifiant qu'elle a toujours la taille enregistrée.
+pub fn open_read_only(path: &Path, expected_size: u64) -> Result<File, EvidenceError> {
+    let file = File::open(path).map_err(|e| io_error(path, e))?;
+    let size = file.metadata().map_err(|e| io_error(path, e))?.len();
+    if size != expected_size {
+        return Err(EvidenceError::Changed(path.to_path_buf()));
+    }
+    Ok(file)
 }
 
 /// Recalcule l'empreinte d'un fichier pour une vérification d'intégrité.
@@ -250,6 +305,28 @@ mod tests {
         assert!(matches!(
             fingerprint(dir.path(), |_, _| {}, &no_cancel()),
             Err(EvidenceError::NotAFile(_))
+        ));
+    }
+
+    #[test]
+    fn lecteur_avec_empreinte() {
+        let mut r = HashingReader::new(&b"abc"[..]);
+        let mut out = Vec::new();
+        r.read_to_end(&mut out).unwrap();
+        assert_eq!(r.bytes_read(), 3);
+        assert_eq!(
+            r.finish().as_str(),
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
+    }
+
+    #[test]
+    fn ouverture_refusee_si_la_taille_a_change() {
+        let (_dir, path) = file_with(b"12345");
+        assert!(open_read_only(&path, 5).is_ok());
+        assert!(matches!(
+            open_read_only(&path, 4),
+            Err(EvidenceError::Changed(_))
         ));
     }
 

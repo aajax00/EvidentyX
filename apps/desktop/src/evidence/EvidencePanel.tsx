@@ -6,12 +6,14 @@ import {
   HardDriveUpload,
   Network,
   RefreshCw,
+  ScanSearch,
   ShieldCheck,
   Trash2,
   type LucideIcon,
 } from "lucide-react";
 import {
   addEvidence,
+  analyzeEvidence,
   isTauri,
   listEvidence,
   pickEvidenceFiles,
@@ -54,6 +56,7 @@ export function EvidencePanel({ investigationId, readOnly }: { investigationId: 
   const [items, setItems] = useState<Evidence[] | null>(null);
   const [pending, setPending] = useState<string[]>([]);
   const [verifying, setVerifying] = useState<Set<number>>(new Set());
+  const [analyzing, setAnalyzing] = useState<Set<number>>(new Set());
   const [toRemove, setToRemove] = useState<Evidence | null>(null);
   const [dragOver, setDragOver] = useState(false);
 
@@ -157,6 +160,31 @@ export function EvidencePanel({ investigationId, readOnly }: { investigationId: 
     reload();
   }
 
+  async function analyze(e: Evidence) {
+    setAnalyzing((s) => new Set([...s, e.id]));
+    try {
+      const r = await analyzeEvidence(e.id);
+      const n = (v: number) => v.toLocaleString("fr-FR");
+      const parts = [`${r.format} · ${n(r.inserted)} événement${r.inserted > 1 ? "s" : ""} extrait${r.inserted > 1 ? "s" : ""}`];
+      if (r.duplicates > 0) parts.push(`${n(r.duplicates)} déjà présent${r.duplicates > 1 ? "s" : ""}`);
+      if (r.errors > 0) {
+        const first = r.firstErrors[0];
+        parts.push(`${n(r.errors)} enregistrement${r.errors > 1 ? "s" : ""} illisible${r.errors > 1 ? "s" : ""}${first ? ` (ligne ${n(first.line)} : ${first.message})` : ""}`);
+      }
+      notify(`« ${e.fileName} » : ${parts.join(" · ")}.`, r.errors > 0 && r.inserted === 0 ? "danger" : "success");
+      refresh();
+    } catch (err) {
+      notify(`« ${e.fileName} » : ${toCommandError(err).message}`, "danger");
+    } finally {
+      setAnalyzing((s) => {
+        const next = new Set(s);
+        next.delete(e.id);
+        return next;
+      });
+      reload();
+    }
+  }
+
   async function copy(sha256: string) {
     try {
       await navigator.clipboard.writeText(sha256);
@@ -234,7 +262,7 @@ export function EvidencePanel({ investigationId, readOnly }: { investigationId: 
                     </p>
                     <p className="evidence-item__events">
                       {e.eventCount === 0
-                        ? "Non analysée — lecture des formats à venir"
+                        ? "Non analysée"
                         : `${e.eventCount.toLocaleString("fr-FR")} événement${e.eventCount > 1 ? "s" : ""} extrait${e.eventCount > 1 ? "s" : ""}`}
                     </p>
                   </div>
@@ -248,6 +276,16 @@ export function EvidencePanel({ investigationId, readOnly }: { investigationId: 
                     <span className="evidence-item__checked">{formatRelative(e.verifiedAt)}</span>
                   </span>
                   <span className="evidence-item__actions">
+                    {!readOnly &&
+                      (analyzing.has(e.id) ? (
+                        <Spinner size="sm" label="Analyse en cours" />
+                      ) : (
+                        <IconButton
+                          icon={ScanSearch}
+                          label={e.eventCount > 0 ? "Réanalyser (ajoute seulement ce qui manque)" : "Analyser : extraire les événements"}
+                          onClick={() => void analyze(e)}
+                        />
+                      ))}
                     {verifying.has(e.id) ? (
                       <Spinner size="sm" label="Vérification en cours" />
                     ) : (

@@ -804,6 +804,7 @@ version = "0.1.0"
 dependencies = [
  "evidentyx-core",
  "evidentyx-evidence",
+ "evidentyx-parser",
  "evidentyx-storage",
  "serde",
  "serde_json",
@@ -820,6 +821,14 @@ dependencies = [
  "evidentyx-core",
  "sha2 0.11.1",
  "tempfile",
+]
+
+[[package]]
+name = "evidentyx-parser"
+version = "0.1.0"
+dependencies = [
+ "evidentyx-core",
+ "serde_json",
 ]
 
 [[package]]

@@ -1,0 +1,17 @@
+[package]
+name = "evidentyx-parser"
+description = "Lecture des formats de preuve EVIDENTYX vers le modèle d'événement canonique."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+evidentyx-core = { path = "../core" }
+# Analyse JSON de référence en Rust (MIT / Apache-2.0).
+serde_json = "1"
+
+[lints]
+workspace = true
