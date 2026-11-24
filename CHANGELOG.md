@@ -24,6 +24,7 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 - Lecture CSV (crate `csv`, RFC 4180) : séparateur deviné (virgule, point-virgule, tabulation, barre verticale), en-tête reconnu ou colonnes numérotées, champs entre guillemets et sur plusieurs lignes, fins de ligne CRLF (ligne et décalage exacts), colonne d'heure choisie automatiquement (colonnes date et heure séparées combinées), noms de colonnes français reconnus, sorties CSV d'EvtxECmd (EZ Tools) reconnues ; colonne d'heure et structure indiquées dans le bilan d'analyse.
 - Lecture Syslog : RFC 5424 (données structurées), RFC 3164 (année déduite de la date du fichier et signalée) et format fichier de rsyslog ; utilisateur, adresse et issue repris des messages de sshd, sudo et du pare-feu du noyau quand ils y figurent.
 - Lecture des journaux d'accès Apache et Nginx (formats common et combined, préfixe `vhost:port`, champs supplémentaires de Nginx) : adresse du client, utilisateur, méthode, chemin, code de réponse et issue, taille, référent et navigateur ; requêtes non standard (sondes) conservées telles quelles.
+- Lecture des captures réseau PCAP et PCAPNG : un événement par paquet avec heure de capture, adresses, ports, protocole (TCP, UDP, ICMP, ARP…), drapeaux TCP, VLAN et clé de flux identique dans les deux sens ; capture interrompue lue jusqu'au dernier paquet complet.
 
 ## [0.1.0] - 2026-11-19
 

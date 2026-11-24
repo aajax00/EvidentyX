@@ -11,11 +11,12 @@
 //! - **progression** et **annulation** ;
 //! - chaque événement garde sa référence exacte à la source.
 //!
-//! Formats pris en charge : JSON Lines, tableau JSON, objets JSON concaténés, CSV, Syslog, journaux d'accès web.
+//! Formats pris en charge : JSON Lines, tableau JSON, objets JSON concaténés, CSV, Syslog, journaux d'accès web, captures réseau PCAP et PCAPNG.
 
 mod delimited;
 mod fields;
 mod json;
+mod pcap;
 mod syslog;
 pub mod time;
 mod weblog;
@@ -47,6 +48,10 @@ pub enum Format {
     Syslog,
     /// Journal d'accès web (Apache, Nginx : common, combined).
     WebAccess,
+    /// Capture réseau libpcap.
+    Pcap,
+    /// Capture réseau PCAP Next Generation.
+    PcapNg,
 }
 
 impl Format {
@@ -58,6 +63,8 @@ impl Format {
             Self::Csv => "csv",
             Self::Syslog => "syslog",
             Self::WebAccess => "web_access",
+            Self::Pcap => "pcap",
+            Self::PcapNg => "pcapng",
         }
     }
 
@@ -69,6 +76,8 @@ impl Format {
             Self::Csv => "CSV",
             Self::Syslog => "Syslog",
             Self::WebAccess => "Journal d'accès web",
+            Self::Pcap => "PCAP",
+            Self::PcapNg => "PCAPNG",
         }
     }
 }
@@ -76,7 +85,8 @@ impl Format {
 /// Détecte le format d'après le nom du fichier et ses premiers octets.
 /// Renvoie `None` si aucun format pris en charge ne correspond.
 pub fn detect(file_name: &str, head: &[u8]) -> Option<Format> {
-    json::detect(file_name, head)
+    pcap::detect(head)
+        .or_else(|| json::detect(file_name, head))
         .or_else(|| syslog::detect(head))
         .or_else(|| weblog::detect(head))
         .or_else(|| delimited::detect(file_name, head))
@@ -199,6 +209,7 @@ pub fn parse(
         Format::Csv => delimited::parse(reader, ctx, sink),
         Format::Syslog => syslog::parse(reader, ctx, sink),
         Format::WebAccess => weblog::parse(reader, ctx, sink),
+        Format::Pcap | Format::PcapNg => pcap::parse(format, reader, ctx, sink),
         _ => json::parse(format, reader, ctx, sink),
     }
 }

@@ -1,6 +1,7 @@
 //! Essais sur de vrais fichiers, hors dépôt (taille, licence).
 //!
 //! Lancer : `EVIDENTYX_FICHIER_TEST=/chemin/vers/fichier.jsonl cargo test -p evidentyx-parser --release -- --ignored --nocapture`
+//! `EVIDENTYX_APERCU=5` affiche les 5 premiers événements (heure µs, message).
 
 use evidentyx_core::{EvidenceId, NewEvent};
 use evidentyx_parser::{detect, parse, ParseContext};
@@ -20,7 +21,15 @@ fn fichier_reel() {
     let format = detect(&path, &head[..n]).expect("format reconnu");
     let started = Instant::now();
     let (mut with_time, mut with_ip, mut with_user) = (0u64, 0u64, 0u64);
+    let mut preview: usize = std::env::var("EVIDENTYX_APERCU")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0);
     let mut sink = |e: NewEvent| {
+        if preview > 0 {
+            preview -= 1;
+            println!("{:?} {}", e.time.map(|t| t.utc_micros), e.message);
+        }
         with_time += u64::from(e.time.is_some());
         with_ip += u64::from(e.source_ip.is_some());
         with_user += u64::from(e.user.is_some());

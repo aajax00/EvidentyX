@@ -43,6 +43,16 @@ Chaque format de preuve (JSON, CSV, Syslog, journaux web, PCAP) doit produire de
 - Issue : code inférieur à 400 → réussite, sinon échec (raccourci : refus et erreur serveur non distingués, à affiner en phase 4). Une requête non standard (sonde TLS, binaire) est gardée telle quelle dans `http.request`, sans méthode déduite. Un client donné par son nom (résolution DNS active) va dans l'attribut `client`.
 - Journaux d'erreurs non lus (format libre, propre à chaque serveur). Mesure : 500 000 lignes `combined` générées en 1,4 s (compilation optimisée).
 
+## Complément — Captures réseau PCAP et PCAPNG (étape 2.7)
+
+- Lecture sans dépendance : PCAP (deux ordres d'octets, microsecondes ou nanosecondes) et PCAPNG (sections multiples, interfaces avec leur résolution `if_tsresol` et leur décalage `if_tsoffset`, paquets améliorés, simples et anciens ; autres blocs ignorés). Détection par la signature du fichier, avant tout autre format.
+- **Un événement par paquet** (catégorie `network`), référencé par son numéro et le décalage de son enregistrement. Heure de capture : base `Explicit`, précision d'après la résolution (au plus la microseconde, celle du modèle). Un paquet simple PCAPNG n'a pas d'heure : il reste sans heure.
+- Décodage des en-têtes uniquement : Ethernet (VLAN), Linux SLL et SLL2, boucle locale BSD, IP brut ; IPv4 (fragments), IPv6 (en-têtes d'extension), ARP ; ports TCP, UDP, SCTP, drapeaux TCP, type et code ICMP. Attribut `flow` : clé identique dans les deux sens, pour regrouper un échange. Le contenu applicatif n'est pas interprété.
+- Texte brut : hexadécimal des 96 premiers octets (signalé tronqué au-delà) ; le paquet complet se relit dans la preuve au décalage enregistré. Un en-tête tronqué donne un événement partiel, pas une erreur.
+- Erreurs : capture interrompue (dernier paquet incomplet) signalée, les paquets précédents gardés ; longueur de bloc incohérente ou démesurée : lecture arrêtée (resynchronisation impossible sans risque).
+- Vérifié contre tcpdump sur des captures réelles (heures, adresses, ports, drapeaux). Mesure : 1 000 000 de paquets (570 Mo) en 6 s, compilation optimisée.
+- Limites : une capture volumineuse donne autant d'événements que de paquets ; regroupement en flux (sessions) : phase 3 (corrélation).
+
 ## Conséquences
 
 - Les étapes 2.4 à 2.7 ajoutent un module par format en réutilisant le cadre et `map_fields`.
