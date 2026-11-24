@@ -15,6 +15,7 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ### Ajouté
 
+- Vue d'ensemble réelle d'une enquête : les données de démonstration sont remplacées par les statistiques des événements extraits (événements, preuves analysées, adresses IP et utilisateurs distincts, période couverte, activité dans le temps, principales sources, catégories) ; recalculée après chaque ajout, analyse ou retrait. Migration 0006 : index des statistiques (création longue une seule fois sur une grosse base ; 1,7 million d'événements : 95 s → 1,9 s).
 - Import suivi : barre de progression (pourcentage, octets lus) pendant le calcul d'empreinte et l'analyse, bouton d'annulation (une analyse annulée ne laisse aucun de ses événements), rapport d'analyse détaillé (format, structure, enregistrements lus, événements retenus, déjà présents, illisibles avec leur ligne ou paquet et leur décalage).
 - Preuves : ajout de fichiers à une enquête (sélecteur ou glisser-déposer), empreinte SHA-256 calculée en flux et en lecture seule, taille et dates ; vérification d'intégrité (intègre, modifiée, introuvable) ; retrait sans jamais toucher au fichier ; contenu en double refusé ([ADR 0003](docs/decisions/0003-preuves-et-integrite.md)).
 - Crate `evidentyx-evidence` (lecture en flux, progression, annulation) ; migration 0003 (table `evidence`) ; commandes `list_evidence`, `add_evidence`, `verify_evidence`, `remove_evidence`.

@@ -18,6 +18,25 @@ pub struct InsertReport {
     pub duplicates: u64,
 }
 
+/// Statistiques d'une enquête (vue d'ensemble).
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Overview {
+    pub events: u64,
+    /// Événements datés.
+    pub timed: u64,
+    /// Premier et dernier horodatage (µs UTC).
+    pub first_us: Option<i64>,
+    pub last_us: Option<i64>,
+    /// Événements datés répartis en intervalles égaux de `first_us` à `last_us`.
+    pub histogram: Vec<u64>,
+    /// Par catégorie, du plus grand nombre au plus petit.
+    pub by_kind: Vec<(EventKind, u64)>,
+    /// Adresses IP distinctes (source ou destination).
+    pub ips: u64,
+    pub users: u64,
+    pub hosts: u64,
+}
+
 /// Page de la chronologie d'une enquête.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EventPage {
@@ -251,6 +270,65 @@ impl Storage {
         Ok(counts)
     }
 
+    /// Statistiques d'une enquête ; `buckets` intervalles pour l'histogramme.
+    pub fn overview(&self, investigation_id: InvestigationId, buckets: u32) -> Result<Overview> {
+        self.investigation(investigation_id)?;
+        let inv = investigation_id.get();
+        let mut o = Overview::default();
+        let (events, timed, first, last): (i64, i64, Option<i64>, Option<i64>) =
+            self.conn.query_row(
+                "SELECT count(*), count(time_us), min(time_us), max(time_us)
+             FROM events WHERE investigation_id = ?1",
+                [inv],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+            )?;
+        let to_u64 = |n: i64| u64::try_from(n).unwrap_or(0);
+        (o.events, o.timed, o.first_us, o.last_us) = (to_u64(events), to_u64(timed), first, last);
+
+        if let (Some(first), Some(last)) = (first, last) {
+            let n = buckets.max(1);
+            o.histogram = vec![0; n as usize];
+            // Calcul en réel : pas de dépassement sur une étendue de plusieurs siècles.
+            let mut stmt = self.conn.prepare(
+                "SELECT CAST((time_us - ?2) * 1.0 * ?3 / (?4 - ?2 + 1) AS INTEGER) AS b, count(*)
+                 FROM events WHERE investigation_id = ?1 AND time_us IS NOT NULL GROUP BY b",
+            )?;
+            let rows = stmt.query_map(params![inv, first, n, last], |r| {
+                Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1)?))
+            })?;
+            for row in rows {
+                let (b, c) = row?;
+                let b = usize::try_from(b).unwrap_or(0).min(n as usize - 1);
+                o.histogram[b] += to_u64(c);
+            }
+        }
+
+        let mut stmt = self.conn.prepare(
+            "SELECT kind, count(*) AS c FROM events WHERE investigation_id = ?1
+             GROUP BY kind ORDER BY c DESC, kind",
+        )?;
+        let rows = stmt.query_map([inv], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))?;
+        for row in rows {
+            let (kind, c) = row?;
+            o.by_kind
+                .push((kind.parse().map_err(StorageError::Domain)?, to_u64(c)));
+        }
+
+        let (ips, users, hosts): (i64, i64, i64) = self.conn.query_row(
+            "SELECT
+               (SELECT count(*) FROM (
+                  SELECT source_ip FROM events WHERE investigation_id = ?1 AND source_ip IS NOT NULL
+                  UNION
+                  SELECT destination_ip FROM events WHERE investigation_id = ?1 AND destination_ip IS NOT NULL)),
+               (SELECT count(DISTINCT user_name) FROM events WHERE investigation_id = ?1),
+               (SELECT count(DISTINCT host) FROM events WHERE investigation_id = ?1)",
+            [inv],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )?;
+        (o.ips, o.users, o.hosts) = (to_u64(ips), to_u64(users), to_u64(hosts));
+        Ok(o)
+    }
+
     /// Chronologie d'une enquête, par pages : ordre chronologique, événements
     /// sans heure à la fin, puis ordre d'insertion (déterministe).
     pub fn list_events(
@@ -405,6 +483,45 @@ mod tests {
         // Les identifiants ne sont pas réutilisés après suppression.
         db.insert_events(ev, &[event(ev, 3, None)]).unwrap();
         assert_eq!(db.last_event_id().unwrap(), 4);
+    }
+
+    #[test]
+    fn vue_d_ensemble() {
+        let (mut db, inv, ev) = setup();
+        let empty = db.overview(inv, 4).unwrap();
+        assert_eq!(
+            (empty.events, empty.first_us, empty.histogram.len()),
+            (0, None, 0)
+        );
+
+        let mut batch: Vec<NewEvent> = (0..8)
+            .map(|i| event(ev, i, Some(i as i64 * 1_000_000)))
+            .collect();
+        batch.push(event(ev, 8, None));
+        batch[0].source_ip = Some("10.0.0.1".parse().unwrap());
+        batch[1].destination_ip = Some("10.0.0.1".parse().unwrap());
+        batch[1].source_ip = Some("10.0.0.2".parse().unwrap());
+        batch[2].user = Some("root".into());
+        batch[3].user = Some("root".into());
+        batch[4].host = Some("srv".into());
+        batch[5].kind = EventKind::Network;
+        db.insert_events(ev, &batch).unwrap();
+
+        let o = db.overview(inv, 4).unwrap();
+        assert_eq!((o.events, o.timed), (9, 8));
+        assert_eq!((o.first_us, o.last_us), (Some(0), Some(7_000_000)));
+        assert_eq!(o.histogram, vec![2, 2, 2, 2]);
+        assert_eq!(
+            o.by_kind,
+            vec![(EventKind::Authentication, 8), (EventKind::Network, 1)]
+        );
+        assert_eq!((o.ips, o.users, o.hosts), (2, 1, 1));
+
+        // Une seule heure : tout dans le premier intervalle.
+        let (mut db, inv, ev) = setup();
+        db.insert_events(ev, &[event(ev, 0, Some(5)), event(ev, 1, Some(5))])
+            .unwrap();
+        assert_eq!(db.overview(inv, 3).unwrap().histogram, vec![2, 0, 0]);
     }
 
     #[test]

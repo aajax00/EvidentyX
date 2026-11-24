@@ -8,6 +8,7 @@ mod analysis;
 mod error;
 mod evidence;
 mod investigations;
+mod overview;
 mod settings;
 mod state;
 mod tasks;
@@ -73,6 +74,7 @@ pub fn run() {
             evidence::remove_evidence,
             analysis::analyze_evidence,
             tasks::cancel_task,
+            overview::investigation_overview,
         ])
         .run(tauri::generate_context!())
         .expect("échec du démarrage de l'application EVIDENTYX");

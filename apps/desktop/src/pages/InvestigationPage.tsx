@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Activity,
   Archive,
@@ -41,6 +41,9 @@ export function InvestigationPage({ id }: { id: number }) {
   const { navigate } = useRouter();
   const [investigation, setInvestigation] = useState<Investigation | null>(null);
   const [error, setError] = useState<CommandError | null>(null);
+  // Incrémenté quand les preuves changent : la vue d'ensemble se recalcule.
+  const [dataVersion, setDataVersion] = useState(0);
+  const evidenceChanged = useCallback(() => setDataVersion((v) => v + 1), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -144,9 +147,13 @@ export function InvestigationPage({ id }: { id: number }) {
         }}
       />
 
-      <EvidencePanel investigationId={investigation.id} readOnly={archived} />
+      <EvidencePanel
+        investigationId={investigation.id}
+        readOnly={archived}
+        onChanged={evidenceChanged}
+      />
 
-      <OverviewPanel investigationId={investigation.id} />
+      <OverviewPanel investigationId={investigation.id} version={dataVersion} />
 
       <Panel title="Contenu de l'enquête" actions={<Badge>planifié</Badge>}>
         <p className="text-muted panel-intro">

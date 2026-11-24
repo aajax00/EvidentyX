@@ -242,6 +242,28 @@ export async function pickEvidenceFiles(): Promise<string[]> {
   return [];
 }
 
+// ——— Vue d'ensemble ———
+
+/** Miroir de `OverviewDto` (src-tauri/src/overview.rs). Dates en ms Unix UTC. */
+export interface Overview {
+  events: number;
+  timed: number;
+  firstAt: number | null;
+  lastAt: number | null;
+  /** Événements datés, en intervalles égaux de `firstAt` à `lastAt`. */
+  histogram: number[];
+  byKind: Array<{ kind: string; events: number }>;
+  ips: number;
+  users: number;
+  hosts: number;
+  evidenceTotal: number;
+  sources: Array<{ evidenceId: number; fileName: string; events: number }>;
+}
+
+export function getOverview(investigationId: number): Promise<Overview> {
+  return call("investigation_overview", { investigationId });
+}
+
 // ——— Analyse ———
 
 /** Miroir de `AnalysisReportDto` (src-tauri/src/analysis.rs). */

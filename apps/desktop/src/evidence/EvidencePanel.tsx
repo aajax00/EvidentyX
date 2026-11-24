@@ -141,7 +141,16 @@ function ReportDialog({ fileName, report: r, onClose }: { fileName: string; repo
  * SHA-256, vérification d'intégrité, retrait. Les fichiers ne sont jamais
  * copiés ni modifiés ; seule une référence est enregistrée.
  */
-export function EvidencePanel({ investigationId, readOnly }: { investigationId: number; readOnly: boolean }) {
+export function EvidencePanel({
+  investigationId,
+  readOnly,
+  onChanged,
+}: {
+  investigationId: number;
+  readOnly: boolean;
+  /** Appelé quand les preuves ou leurs événements changent. */
+  onChanged?: () => void;
+}) {
   const { notify } = useToast();
   const { refresh } = useInvestigations();
   const [items, setItems] = useState<Evidence[] | null>(null);
@@ -183,10 +192,11 @@ export function EvidencePanel({ investigationId, readOnly }: { investigationId: 
       if (added > 0) {
         notify(added === 1 ? "Preuve ajoutée, empreinte SHA-256 calculée." : `${added} preuves ajoutées.`);
         refresh();
+        onChanged?.();
       }
       reload();
     },
-    [investigationId, notify, refresh, reload],
+    [investigationId, notify, refresh, reload, onChanged],
   );
 
   // Glisser-déposer de fichiers depuis le système (application de bureau).
@@ -274,6 +284,7 @@ export function EvidencePanel({ investigationId, readOnly }: { investigationId: 
     } finally {
       update(null);
       reload();
+      onChanged?.();
     }
   }
 
@@ -447,6 +458,7 @@ export function EvidencePanel({ investigationId, readOnly }: { investigationId: 
                     await removeEvidence(target.id);
                     notify(`« ${target.fileName} » retirée de l'enquête.`);
                     refresh();
+                    onChanged?.();
                   } catch (e) {
                     notify(toCommandError(e).message, "danger");
                   } finally {
