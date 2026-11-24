@@ -1,15 +1,4 @@
-/* Vue d'ensemble d'une enquête (données de démonstration). */
-
-.overview-demo {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-4);
-  padding: var(--space-2) var(--space-3);
-  background: var(--color-warning-subtle);
-  color: var(--color-warning);
-  font-size: var(--text-xs);
-}
+/* Vue d'ensemble d'une enquête. */
 
 .overview-kpis {
   display: grid;
@@ -117,8 +106,7 @@
 }
 
 /* Sources : barres horizontales relatives */
-.overview-sources,
-.overview-severity {
+.overview-sources {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -157,41 +145,8 @@
   color: var(--color-text-muted);
 }
 
-.overview-severity {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-2);
-}
-
-.overview-severity__item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border: var(--border-width) solid var(--color-border);
-  font-size: var(--text-xs);
-}
-
-.overview-severity__swatch {
-  width: 8px;
-  height: 8px;
-  flex: none;
-}
-
-.overview-severity__value {
-  margin-left: auto;
-  font-size: var(--text-sm);
-}
-
-.overview-severity__item--critical .overview-severity__swatch {
-  background: var(--color-severity-critical);
-}
-.overview-severity__item--high .overview-severity__swatch {
-  background: var(--color-severity-high);
-}
-.overview-severity__item--medium .overview-severity__swatch {
-  background: var(--color-severity-medium);
-}
-.overview-severity__item--low .overview-severity__swatch {
-  background: var(--color-severity-low);
+.overview-note {
+  margin-top: var(--space-2);
+  font-size: var(--text-2xs);
+  color: var(--color-text-subtle);
 }

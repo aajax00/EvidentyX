@@ -5,7 +5,7 @@
 // Les règles reproduites ici sont volontairement minimales : la référence est
 // le moteur Rust (evidentyx-core, evidentyx-storage). Exclu de la version publiée.
 
-import type { AnalysisReport, Evidence, Investigation, InvestigationQuery, ProgressHandler, Settings, StorageInfo } from "../api";
+import type { AnalysisReport, Evidence, Investigation, InvestigationQuery, Overview, ProgressHandler, Settings, StorageInfo } from "../api";
 
 const DAY = 86_400_000;
 const now = Date.now();
@@ -204,6 +204,31 @@ export async function mockInvoke<T>(command: string, args: Record<string, unknow
           errors: 3,
           firstErrors: [{ line: 57, byteOffset: 9120, message: "JSON invalide : EOF while parsing an object" }],
         } satisfies AnalysisReport;
+      }
+      case "investigation_overview": {
+        find(args.investigationId);
+        const list = evidence.filter((e) => e.investigationId === args.investigationId);
+        const sources = list
+          .filter((e) => e.eventCount > 0)
+          .map((e) => ({ evidenceId: e.id, fileName: e.fileName, events: e.eventCount }))
+          .sort((a, b) => b.events - a.events);
+        const events = sources.reduce((a, s) => a + s.events, 0);
+        // Répartition régulière fictive : la démonstration ne lit aucun fichier.
+        const histogram = events === 0 ? [] : Array.from({ length: 48 }, (_, i) => Math.round((events / 48) * (1 + Math.sin(i / 4))));
+        const t = Date.now();
+        return {
+          events,
+          timed: events,
+          firstAt: events ? t - 2 * DAY : null,
+          lastAt: events ? t : null,
+          histogram,
+          byKind: events ? [{ kind: "authentication", events }] : [],
+          ips: events ? 12 : 0,
+          users: events ? 4 : 0,
+          hosts: events ? 2 : 0,
+          evidenceTotal: list.length,
+          sources,
+        } satisfies Overview;
       }
       case "get_settings":
         return { ...settings };

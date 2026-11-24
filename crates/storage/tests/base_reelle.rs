@@ -30,3 +30,27 @@ fn suppression() {
         println!("suppression enquête {:.2?}", t.elapsed());
     }
 }
+
+/// Lecture seule : temps de calcul de la vue d'ensemble de chaque enquête.
+#[test]
+#[ignore = "nécessite EVIDENTYX_BASE_TEST"]
+fn vue_d_ensemble() {
+    let Ok(path) = std::env::var("EVIDENTYX_BASE_TEST") else {
+        return;
+    };
+    let db = Storage::open(&path).unwrap();
+    for inv in db.list_investigations(None).unwrap() {
+        let t = Instant::now();
+        let o = db.overview(inv.id, 48).unwrap();
+        println!(
+            "enquête {} : {} événements, {} IP, {} utilisateurs, {} hôtes, {:?} en {:.2?}",
+            inv.id.get(),
+            o.events,
+            o.ips,
+            o.users,
+            o.hosts,
+            o.by_kind,
+            t.elapsed()
+        );
+    }
+}
