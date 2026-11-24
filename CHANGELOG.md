@@ -8,6 +8,8 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ### Corrigé
 
+- CSV : un en-tête contenant une colonne en double (CIC-IDS2017 répète `Fwd Header Length`) était lu comme une ligne de données ; colonnes alors mal nommées.
+- CSV à nombreuses colonnes environ 4 fois plus rapide (correspondance des champs en une passe, analyse des noms de champs mémorisée).
 - Fenêtre figée (« Forcer à quitter ») lors de la suppression d'une preuve ou d'une enquête et à l'ouverture d'une enquête volumineuse : les accès à la base se font hors du fil de la fenêtre, avec indicateur d'attente.
 - Suppression très lente : attributs d'événement regroupés en une colonne (migration 0005, données conservées ; une base volumineuse peut demander une minute ou plus au premier lancement).
 

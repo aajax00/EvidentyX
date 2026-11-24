@@ -10,7 +10,6 @@
 use crate::time;
 use evidentyx_core::event::{MAX_ATTRIBUTES, MAX_ATTRIBUTE_KEY_CHARS, MAX_ATTRIBUTE_VALUE_CHARS};
 use evidentyx_core::{EventKind, EventTime, NewEvent, Outcome, SourceRef};
-use std::collections::BTreeMap;
 use std::net::IpAddr;
 
 /// Valeur scalaire d'un champ.
@@ -139,72 +138,78 @@ const MESSAGE: &[&str] = &[
     "libelle",
 ];
 
+/// Nom comparable : minuscules, sans `_ - . ` ni espaces.
 pub(crate) fn norm(key: &str) -> String {
-    // Les mêmes noms de champs reviennent à chaque enregistrement : la forme
-    // normalisée est mémorisée (cache borné, par fil d'exécution).
+    key.chars()
+        .filter(|c| !matches!(c, '_' | '-' | '.' | ' '))
+        .flat_map(char::to_lowercase)
+        .collect()
+}
+
+/// Champ normalisé qu'un nom de champ peut remplir.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Role {
+    Time,
+    Host,
+    SrcIp,
+    DstIp,
+    SrcPort,
+    DstPort,
+    User,
+    Action,
+    Outcome,
+    Message,
+}
+
+const ROLES: [(Role, &[&str]); 10] = [
+    (Role::Time, TIME),
+    (Role::Host, HOST),
+    (Role::SrcIp, SRC_IP),
+    (Role::DstIp, DST_IP),
+    (Role::SrcPort, SRC_PORT),
+    (Role::DstPort, DST_PORT),
+    (Role::User, USER),
+    (Role::Action, ACTION),
+    (Role::Outcome, OUTCOME),
+    (Role::Message, MESSAGE),
+];
+
+/// Ce qu'un nom de champ indique : rôle (avec priorité d'alias) et catégorie
+/// suggérée par le nom (rang dans `KIND_KEYWORDS`).
+#[derive(Debug, Clone, Copy)]
+struct KeyInfo {
+    role: Option<(Role, usize)>,
+    kind_rank: Option<usize>,
+}
+
+/// Les mêmes noms reviennent à chaque enregistrement d'un fichier : leur analyse
+/// est mémorisée (cache borné, par fil d'exécution).
+fn key_info(key: &str) -> KeyInfo {
     thread_local! {
-        static CACHE: std::cell::RefCell<std::collections::HashMap<String, String>> =
+        static CACHE: std::cell::RefCell<std::collections::HashMap<String, KeyInfo>> =
             std::cell::RefCell::new(std::collections::HashMap::new());
     }
-    CACHE.with(|cache| {
-        if let Some(n) = cache.borrow().get(key) {
-            return n.clone();
-        }
-        let n: String = key
-            .chars()
-            .filter(|c| !matches!(c, '_' | '-' | '.' | ' '))
-            .flat_map(char::to_lowercase)
-            .collect();
-        let mut cache = cache.borrow_mut();
-        if cache.len() >= 4096 {
-            cache.clear();
-        }
-        cache.insert(key.to_owned(), n.clone());
-        n
-    })
-}
-
-/// Champs restant à consommer, indexés par nom normalisé.
-struct Fields {
-    by_norm: BTreeMap<String, String>, // nom normalisé → nom d'origine
-    values: BTreeMap<String, Scalar>,  // nom d'origine → valeur
-}
-
-impl Fields {
-    /// Premier alias présent, non vide ; renvoie (nom d'origine, valeur).
-    fn find(&self, aliases: &[&str]) -> Option<(String, Scalar)> {
-        aliases.iter().find_map(|a| {
-            let original = self.by_norm.get(*a)?;
-            let value = self.values.get(original)?;
-            (!value.text().trim().is_empty()).then(|| (original.clone(), value.clone()))
-        })
+    if let Some(info) = CACHE.with(|c| c.borrow().get(key).copied()) {
+        return info;
     }
-
-    fn take(&mut self, original: &str) {
-        self.values.remove(original);
-        self.by_norm.retain(|_, v| v != original);
-    }
-
-    /// Consomme le premier alias dont la valeur est acceptée par `accept`.
-    fn take_with<T>(
-        &mut self,
-        aliases: &[&str],
-        accept: impl Fn(&Scalar) -> Option<T>,
-    ) -> Option<T> {
-        for a in aliases {
-            let Some(original) = self.by_norm.get(*a).cloned() else {
-                continue;
-            };
-            let Some(value) = self.values.get(&original) else {
-                continue;
-            };
-            if let Some(v) = accept(value) {
-                self.take(&original);
-                return Some(v);
-            }
+    let n = norm(key);
+    let lower = key.to_lowercase();
+    let info = KeyInfo {
+        role: ROLES
+            .iter()
+            .find_map(|(role, aliases)| Some((*role, aliases.iter().position(|a| *a == n)?))),
+        kind_rank: KIND_KEYWORDS
+            .iter()
+            .position(|(_, words)| words.iter().any(|w| lower.contains(w))),
+    };
+    CACHE.with(|c| {
+        let mut c = c.borrow_mut();
+        if c.len() >= 4096 {
+            c.clear();
         }
-        None
-    }
+        c.insert(key.to_owned(), info);
+    });
+    info
 }
 
 fn parse_time(v: &Scalar) -> Option<EventTime> {
@@ -323,47 +328,22 @@ const KIND_KEYWORDS: &[(EventKind, &[&str])] = &[
 ];
 
 /// Catégorie : mots-clés de l'action et du message d'abord, puis noms de champs.
-fn infer_kind(action: Option<&str>, message: Option<&str>, keys: &[String]) -> EventKind {
+fn infer_kind(action: Option<&str>, message: Option<&str>, key_rank: Option<usize>) -> EventKind {
     let text = format!("{} {}", action.unwrap_or(""), message.unwrap_or("")).to_lowercase();
-    for (kind, words) in KIND_KEYWORDS {
-        if words.iter().any(|w| text.contains(w)) {
-            return *kind;
-        }
-    }
-    kind_from_keys(keys)
+    KIND_KEYWORDS
+        .iter()
+        .find(|(_, words)| words.iter().any(|w| text.contains(w)))
+        .or_else(|| KIND_KEYWORDS.get(key_rank?))
+        .map_or(EventKind::Other, |(k, _)| *k)
 }
 
-/// Catégorie déduite des seuls noms de champs ; mémorisée par jeu de noms
-/// (identique d'une ligne à l'autre dans un même fichier).
-fn kind_from_keys(keys: &[String]) -> EventKind {
-    use std::hash::{Hash, Hasher};
-    thread_local! {
-        static CACHE: std::cell::RefCell<std::collections::HashMap<u64, EventKind>> =
-            std::cell::RefCell::new(std::collections::HashMap::new());
+/// Texte limité à `max` caractères, copié seulement s'il faut couper.
+fn clip_owned(s: String, max: usize) -> String {
+    if s.len() <= max {
+        s // octets ≤ max ⇒ caractères ≤ max
+    } else {
+        clip_chars(&s, max)
     }
-    let mut h = std::collections::hash_map::DefaultHasher::new();
-    keys.hash(&mut h);
-    let sig = h.finish();
-    if let Some(k) = CACHE.with(|c| c.borrow().get(&sig).copied()) {
-        return k;
-    }
-    let joined = keys
-        .iter()
-        .map(|k| k.to_lowercase())
-        .collect::<Vec<_>>()
-        .join(" ");
-    let kind = KIND_KEYWORDS
-        .iter()
-        .find(|(_, words)| words.iter().any(|w| joined.contains(w)))
-        .map_or(EventKind::Other, |(k, _)| *k);
-    CACHE.with(|c| {
-        let mut c = c.borrow_mut();
-        if c.len() >= 1024 {
-            c.clear();
-        }
-        c.insert(sig, kind);
-    });
-    kind
 }
 
 pub(crate) fn clip_chars(s: &str, max: usize) -> String {
@@ -395,37 +375,55 @@ pub fn map_fields_with(
     fields: Vec<(String, Scalar)>,
     hints: &Hints,
 ) -> NewEvent {
-    let keys: Vec<String> = fields.iter().map(|(k, _)| k.clone()).collect();
-    let mut f = Fields {
-        by_norm: BTreeMap::new(),
-        values: BTreeMap::new(),
-    };
-    for (k, v) in fields {
-        f.by_norm.entry(norm(&k)).or_insert_with(|| k.clone());
-        f.values.insert(k, v);
+    // Une passe : rôle de chaque champ (mémorisé par nom), puis, pour chaque
+    // rôle, le premier alias par priorité dont la valeur est exploitable.
+    let infos: Vec<KeyInfo> = fields.iter().map(|(k, _)| key_info(k)).collect();
+    let key_rank = infos.iter().filter_map(|i| i.kind_rank).min();
+    let mut slots: Vec<Option<(String, Scalar)>> = fields.into_iter().map(Some).collect();
+
+    fn take<T>(
+        slots: &mut [Option<(String, Scalar)>],
+        infos: &[KeyInfo],
+        role: Role,
+        accept: impl Fn(&Scalar) -> Option<T>,
+    ) -> Option<T> {
+        let mut candidates: Vec<(usize, usize)> = infos
+            .iter()
+            .enumerate()
+            .filter_map(|(i, info)| match info.role {
+                Some((r, priority)) if r == role && slots[i].is_some() => Some((priority, i)),
+                _ => None,
+            })
+            .collect();
+        candidates.sort_unstable();
+        candidates.into_iter().find_map(|(_, i)| {
+            let value = accept(&slots[i].as_ref()?.1)?;
+            slots[i] = None;
+            Some(value)
+        })
     }
 
     let hinted = hints.time_field.as_deref().and_then(|k| {
-        let t = parse_time(f.values.get(k)?)?;
-        f.take(k);
+        let i = slots
+            .iter()
+            .position(|s| s.as_ref().is_some_and(|(n, _)| n == k))?;
+        let t = parse_time(&slots[i].as_ref()?.1)?;
+        slots[i] = None;
         Some(t)
     });
-    let time = hinted.or_else(|| f.take_with(TIME, parse_time));
-    let host = f.take_with(HOST, non_empty_text);
-    let source_ip = f.take_with(SRC_IP, parse_ip);
-    let destination_ip = f.take_with(DST_IP, parse_ip);
-    let source_port = f.take_with(SRC_PORT, parse_port);
-    let destination_port = f.take_with(DST_PORT, parse_port);
-    let user = f.take_with(USER, non_empty_text);
-    let action = f.take_with(ACTION, non_empty_text);
-    let outcome = f.take_with(OUTCOME, parse_outcome);
-    let message = f.find(MESSAGE).and_then(|(k, v)| {
-        let text = non_empty_text(&v)?;
-        f.take(&k);
-        Some(text)
-    });
+    let f = &mut slots;
+    let time = hinted.or_else(|| take(f, &infos, Role::Time, parse_time));
+    let host = take(f, &infos, Role::Host, non_empty_text);
+    let source_ip = take(f, &infos, Role::SrcIp, parse_ip);
+    let destination_ip = take(f, &infos, Role::DstIp, parse_ip);
+    let source_port = take(f, &infos, Role::SrcPort, parse_port);
+    let destination_port = take(f, &infos, Role::DstPort, parse_port);
+    let user = take(f, &infos, Role::User, non_empty_text);
+    let action = take(f, &infos, Role::Action, non_empty_text);
+    let outcome = take(f, &infos, Role::Outcome, parse_outcome);
+    let message = take(f, &infos, Role::Message, non_empty_text);
 
-    let kind = infer_kind(action.as_deref(), message.as_deref(), &keys);
+    let kind = infer_kind(action.as_deref(), message.as_deref(), key_rank);
     let message = message.unwrap_or_else(|| {
         // Pas de message dans la source : résumé composé uniquement de valeurs présentes.
         let parts: Vec<String> = [
@@ -456,8 +454,11 @@ pub fn map_fields_with(
     event.outcome = outcome;
 
     let mut omitted = 0usize;
-    for (k, v) in f.values {
-        let value = v.text();
+    for (k, v) in slots.into_iter().flatten() {
+        let value = match v {
+            Scalar::Text(t) | Scalar::Number(_, t) => t,
+            Scalar::Bool(b) => b.to_string(),
+        };
         if value.trim().is_empty() {
             continue;
         }
@@ -465,10 +466,10 @@ pub fn map_fields_with(
             omitted += 1;
             continue;
         }
-        let key = clip_chars(&k, MAX_ATTRIBUTE_KEY_CHARS);
-        event
-            .attributes
-            .insert(key, clip_chars(&value, MAX_ATTRIBUTE_VALUE_CHARS));
+        event.attributes.insert(
+            clip_owned(k, MAX_ATTRIBUTE_KEY_CHARS),
+            clip_owned(value, MAX_ATTRIBUTE_VALUE_CHARS),
+        );
     }
     if omitted > 0 {
         event

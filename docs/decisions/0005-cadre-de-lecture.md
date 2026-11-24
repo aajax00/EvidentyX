@@ -27,7 +27,7 @@ Chaque format de preuve (JSON, CSV, Syslog, journaux web, PCAP) doit produire de
 - **CRLF** : la crate `csv` donne alors des numéros de ligne faux et un décalage posé sur le `\n` précédent ; un lecteur intermédiaire note les fins de ligne lues et recalcule ligne et décalage exacts (mémoire bornée).
 - **Texte brut** : enregistrement reconstitué (mêmes valeurs, séparateur d'origine, guillemets normalisés) ; le décalage et la ligne désignent l'original.
 - **EZ Tools** : les colonnes d'EvtxECmd (`TimeCreated`, `Computer`, `UserName`, `MapDescription`…) sont reconnues par les alias communs ; les sorties à plusieurs horodatages par ligne (MFTECmd) relèvent d'une évolution ultérieure.
-- **Performances mesurées** (compilation optimisée, lecture seule) : 70 000 lignes de journaux en 2 s ; fichiers de flux CIC-IDS2017 à 79 colonnes ≈ 5 700 lignes/s — optimisation prévue en phase 5.
+- **Performances mesurées** (compilation optimisée, lecture seule) : 70 000 lignes de journaux en 2 s ; fichiers de flux CIC-IDS2017 à 79 colonnes ≈ 5 700 lignes/s, puis ≈ 24 800 lignes/s après la correspondance des champs en une passe (2026-11-24).
 
 ## Complément — Syslog (étape 2.5)
 
