@@ -5,7 +5,7 @@
 // Les règles reproduites ici sont volontairement minimales : la référence est
 // le moteur Rust (evidentyx-core, evidentyx-storage). Exclu de la version publiée.
 
-import type { AnalysisReport, Evidence, Investigation, InvestigationQuery, Settings, StorageInfo } from "../api";
+import type { AnalysisReport, Evidence, Investigation, InvestigationQuery, ProgressHandler, Settings, StorageInfo } from "../api";
 
 const DAY = 86_400_000;
 const now = Date.now();
@@ -113,8 +113,38 @@ const touch = (i: Investigation) => {
   return { ...i };
 };
 
+const cancelled = new Set<string>();
+const running = new Set<string>();
+
+/** Tâche longue simulée : progression sur environ 2 s, annulable. */
+async function simulateTask(args: Record<string, unknown>, total: number, cancelMessage: string) {
+  const taskId = String(args.taskId);
+  const onProgress = args.onProgress as ProgressHandler;
+  running.add(taskId);
+  try {
+    for (let i = 0; i <= 20; i++) {
+      if (cancelled.delete(taskId)) fail("cancelled", cancelMessage);
+      onProgress({ done: Math.round((total * i) / 20), total });
+      await new Promise((r) => setTimeout(r, 100));
+    }
+  } finally {
+    running.delete(taskId);
+  }
+}
+
 export async function mockInvoke<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {
   await new Promise((r) => setTimeout(r, 80));
+  if (command === "cancel_task") {
+    const id = String(args.taskId);
+    if (!running.has(id)) return false as T;
+    cancelled.add(id);
+    return true as T;
+  }
+  if (command === "add_evidence") await simulateTask(args, 48_000_000, "Lecture annulée");
+  if (command === "analyze_evidence") {
+    const e = evidence.find((x) => x.id === args.evidenceId);
+    if (e && /\.(jsonl?|ndjson|csv|tsv)$/i.test(e.fileName)) await simulateTask(args, e.sizeBytes, "Analyse annulée : les événements de cette analyse ont été retirés.");
+  }
   const result = ((): unknown => {
     switch (command) {
       case "list_evidence":

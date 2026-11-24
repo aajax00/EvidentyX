@@ -56,5 +56,5 @@ Chaque format de preuve (JSON, CSV, Syslog, journaux web, PCAP) doit produire de
 ## Conséquences
 
 - Les étapes 2.4 à 2.7 ajoutent un module par format en réutilisant le cadre et `map_fields`.
-- Progression détaillée et annulation dans l'interface : étape 2.8 (le cadre les gère déjà).
+- Progression et annulation dans l'interface (étape 2.8) : canal Tauri par tâche, annulation par `cancel_task`. **Une analyse annulée retire les événements qu'elle a ajoutés** (identifiants supérieurs au dernier attribué avant l'analyse, jamais réutilisés) et garde ceux des analyses précédentes : pas d'état partiel dont l'empreinte n'a pas été vérifiée.
 - Performances mesurées : ~30 000 événements/s sur 70 000 enregistrements JSON Lines réels (31,6 Mo, compilation optimisée) ; optimisation prévue en phase 5 si nécessaire.

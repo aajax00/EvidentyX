@@ -1,7 +1,7 @@
 // Accès typé aux commandes exposées par l'hôte Tauri.
 // Toute logique métier reste côté Rust : ce module ne fait que relayer.
 
-import { invoke } from "@tauri-apps/api/core";
+import { Channel, invoke } from "@tauri-apps/api/core";
 
 /** Vrai lorsque l'interface tourne dans la fenêtre Tauri (et non dans un navigateur seul). */
 export function isTauri(): boolean {
@@ -178,9 +178,40 @@ export function listEvidence(investigationId: number): Promise<Evidence[]> {
   return call("list_evidence", { investigationId });
 }
 
+// ——— Tâches longues ———
+
+/** Miroir de `TaskProgress` (src-tauri/src/tasks.rs) : octets traités / total. */
+export interface TaskProgress {
+  done: number;
+  total: number;
+}
+
+export type ProgressHandler = (p: TaskProgress) => void;
+
+/** Identifiant unique d'une tâche, pour l'annuler. */
+export const newTaskId = (): string => crypto.randomUUID();
+
+/** Canal de progression Tauri ; en démonstration, la fonction elle-même. */
+function progressArg(onProgress: ProgressHandler): unknown {
+  if (!isTauri()) return onProgress;
+  const channel = new Channel<TaskProgress>();
+  channel.onmessage = onProgress;
+  return channel;
+}
+
+/** Demande l'arrêt d'une tâche ; `false` si elle est déjà terminée. */
+export function cancelTask(taskId: string): Promise<boolean> {
+  return call("cancel_task", { taskId });
+}
+
 /** Lit le fichier (empreinte SHA-256, en lecture seule) et l'enregistre dans l'enquête. */
-export function addEvidence(investigationId: number, path: string): Promise<Evidence> {
-  return call("add_evidence", { investigationId, path });
+export function addEvidence(
+  investigationId: number,
+  path: string,
+  taskId: string,
+  onProgress: ProgressHandler,
+): Promise<Evidence> {
+  return call("add_evidence", { investigationId, path, taskId, onProgress: progressArg(onProgress) });
 }
 
 /** Recalcule l'empreinte et enregistre le résultat de la vérification. */
@@ -228,6 +259,6 @@ export interface AnalysisReport {
 }
 
 /** Lit la preuve (format reconnu automatiquement) et enregistre ses événements. */
-export function analyzeEvidence(evidenceId: number): Promise<AnalysisReport> {
-  return call("analyze_evidence", { evidenceId });
+export function analyzeEvidence(evidenceId: number, taskId: string, onProgress: ProgressHandler): Promise<AnalysisReport> {
+  return call("analyze_evidence", { evidenceId, taskId, onProgress: progressArg(onProgress) });
 }

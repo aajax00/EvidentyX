@@ -67,6 +67,7 @@ Tous les formats de preuve sont convertis vers un **événement canonique** (`ev
 | `delete_investigation` | Suppression définitive |
 | `list_evidence`, `add_evidence`, `verify_evidence`, `remove_evidence` | Preuves d'une enquête : liste, ajout avec empreinte SHA-256, vérification d'intégrité, retrait (le fichier n'est jamais touché) |
 | `analyze_evidence` | Reconnaît le format d'une preuve, extrait ses événements, vérifie l'empreinte pendant la lecture |
+| `cancel_task` | Annule une tâche longue (`add_evidence`, `analyze_evidence`) ; ces commandes reçoivent un identifiant de tâche et un canal de progression (octets lus sur taille, au plus 10 envois par seconde) |
 | `get_settings`, `update_settings` | Lecture et enregistrement des réglages (validation par `evidentyx-core`) |
 
 Les erreurs sont renvoyées sous la forme `{ code, message, field? }` : `code` est stable (`validation`, `not_found`, `archived_read_only`…), `message` est en français, `field` désigne le champ de formulaire concerné. La base `evidentyx.sqlite` se trouve dans le dossier de données de l'application (par exemple `~/.local/share/org.evidentyx.desktop/` sous Linux).
