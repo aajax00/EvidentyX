@@ -160,14 +160,15 @@ fn looks_like_header(fields: &[String]) -> bool {
     if fields.is_empty() {
         return false;
     }
-    let mut seen = std::collections::HashSet::new();
-    fields.iter().all(|f| {
+    let names_only = fields.iter().all(|f| {
         let t = f.trim();
-        !t.is_empty()
-            && t.parse::<f64>().is_err()
-            && time::parse_text(t).is_none()
-            && seen.insert(t.to_lowercase())
-    })
+        !t.is_empty() && t.parse::<f64>().is_err() && time::parse_text(t).is_none()
+    });
+    // Noms en majorité distincts : quelques doublons existent dans des jeux
+    // réels (CIC-IDS2017 répète `Fwd Header Length`), ils sont suffixés ensuite.
+    let distinct: std::collections::HashSet<String> =
+        fields.iter().map(|f| f.trim().to_lowercase()).collect();
+    names_only && distinct.len() * 10 >= fields.len() * 9
 }
 
 /// Noms de colonnes uniques (doublons suffixés `_2`, `_3`…).
@@ -542,6 +543,26 @@ mod tests {
         assert_eq!(
             ev[1].attributes.get("Label").map(String::as_str),
             Some("DDoS")
+        );
+    }
+
+    #[test]
+    fn en_tete_avec_colonne_en_double() {
+        let input = " Destination Port, Fwd Header Length, Flow Bytes/s, Fwd Header Length, Label, Protocol, Flow IAT Mean, Idle Max, Idle Min, Bwd Packets/s\n\
+80,32,1.5,32,DDoS,6,0.1,0,0,2\n";
+        let (r, ev) = run(input);
+        assert_eq!(
+            (r.records, r.events),
+            (1, 1),
+            "l'en-tête n'est pas une ligne de données"
+        );
+        assert_eq!(ev[0].destination_port, Some(80));
+        assert_eq!(
+            ev[0]
+                .attributes
+                .get("Fwd Header Length_2")
+                .map(String::as_str),
+            Some("32")
         );
     }
 
