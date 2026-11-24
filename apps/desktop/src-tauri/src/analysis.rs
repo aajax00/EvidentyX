@@ -55,7 +55,7 @@ pub struct RecordErrorDto {
 fn unsupported() -> CommandError {
     CommandError::new(
         "unsupported_format",
-        "Format non reconnu pour l'instant : JSON, JSON Lines, CSV et Syslog sont lus. Journaux web et PCAP arrivent aux étapes suivantes.",
+        "Format non reconnu pour l'instant : JSON, JSON Lines, CSV, Syslog et journaux d'accès web sont lus. PCAP arrive à l'étape suivante.",
     )
 }
 

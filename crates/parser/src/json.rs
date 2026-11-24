@@ -142,7 +142,9 @@ pub fn parse(
         Format::JsonArray | Format::JsonConcatenated => {
             values(&mut reader, &mut em, format == Format::JsonArray)?
         }
-        Format::Csv | Format::Syslog => unreachable!("format lu par un autre module"),
+        Format::Csv | Format::Syslog | Format::WebAccess => {
+            unreachable!("format lu par un autre module")
+        }
     }
     Ok(em.report)
 }
