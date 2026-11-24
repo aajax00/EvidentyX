@@ -28,6 +28,11 @@ export function Header({ onOpenPalette }: HeaderProps) {
               {openName}
             </h1>
           </>
+        ) : section === "home" ? (
+          <>
+            <h1 className="sr-only">{SECTION_TITLES.home}</h1>
+            <p className="shell-header__tagline">Chaque trace. Chaque connexion. Chaque vérité.</p>
+          </>
         ) : (
           <h1 className="shell-breadcrumb__current">{SECTION_TITLES[section]}</h1>
         )}

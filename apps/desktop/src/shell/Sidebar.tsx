@@ -24,13 +24,16 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
     <aside className={cx("shell-sidebar", collapsed && "shell-sidebar--collapsed")}>
       <div className="shell-sidebar__brand">
         {collapsed ? (
-          <BrandMark size={30} />
+          <BrandMark size={34} />
         ) : (
           <>
             <BrandLogo className="shell-sidebar__logo" />
             <span className="shell-sidebar__wordmark">
               <span className="shell-sidebar__name">EVIDENTYX</span>
-              <span className="shell-sidebar__tag">Investigation numérique</span>
+              <span className="shell-sidebar__tag">
+                Investigation numérique
+                <br />& reconstruction d'incidents
+              </span>
             </span>
           </>
         )}

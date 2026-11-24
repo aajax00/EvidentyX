@@ -53,7 +53,7 @@ export function SettingsPage() {
         />
         <Switch
           label="Animation d'arrière-plan"
-          description="Un réseau de points relié lentement, discret, derrière l'interface."
+          description="Réseau de points derrière l'interface et relief animé du tableau de bord (fixe si désactivé)."
           checked={settings.backgroundAnimation}
           disabled={reducedMotion}
           onChange={(v) => change({ backgroundAnimation: v })}

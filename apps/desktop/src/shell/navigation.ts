@@ -46,7 +46,7 @@ export const NAVIGATION: readonly NavGroup[] = [
   {
     label: "Général",
     items: [
-      { kind: "page", page: "home", label: "Accueil", icon: House },
+      { kind: "page", page: "home", label: "Tableau de bord", icon: House },
       { kind: "page", page: "investigations", label: "Enquêtes", icon: FolderSearch },
     ],
   },
@@ -70,7 +70,7 @@ export const NAVIGATION: readonly NavGroup[] = [
 
 /** Titre de chaque section dans l'en-tête. */
 export const SECTION_TITLES: Record<SectionId, string> = {
-  home: "Accueil",
+  home: "Tableau de bord",
   investigations: "Enquêtes",
   settings: "Paramètres",
   about: "À propos",

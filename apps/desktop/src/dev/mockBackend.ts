@@ -5,7 +5,7 @@
 // Les règles reproduites ici sont volontairement minimales : la référence est
 // le moteur Rust (evidentyx-core, evidentyx-storage). Exclu de la version publiée.
 
-import type { AnalysisReport, Evidence, Investigation, InvestigationQuery, Overview, ProgressHandler, Settings, StorageInfo } from "../api";
+import type { AnalysisReport, Evidence, Investigation, InvestigationQuery, Overview, ProgressHandler, Settings, StorageInfo, Totals } from "../api";
 
 const DAY = 86_400_000;
 const now = Date.now();
@@ -205,6 +205,12 @@ export async function mockInvoke<T>(command: string, args: Record<string, unknow
           firstErrors: [{ line: 57, byteOffset: 9120, message: "JSON invalide : EOF while parsing an object" }],
         } satisfies AnalysisReport;
       }
+      case "totals":
+        return {
+          events: evidence.reduce((a, e) => a + e.eventCount, 0),
+          evidence: evidence.length,
+          evidenceIntact: evidence.filter((e) => e.integrity === "intact").length,
+        } satisfies Totals;
       case "investigation_overview": {
         find(args.investigationId);
         const list = evidence.filter((e) => e.investigationId === args.investigationId);

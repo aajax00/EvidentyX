@@ -18,6 +18,15 @@ pub struct InsertReport {
     pub duplicates: u64,
 }
 
+/// Totaux de toutes les enquêtes (tableau de bord).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Totals {
+    pub events: u64,
+    pub evidence: u64,
+    /// Preuves intègres à leur dernière vérification.
+    pub evidence_intact: u64,
+}
+
 /// Statistiques d'une enquête (vue d'ensemble).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Overview {
@@ -270,6 +279,23 @@ impl Storage {
         Ok(counts)
     }
 
+    /// Totaux de toutes les enquêtes.
+    pub fn totals(&self) -> Result<Totals> {
+        let (events, evidence, intact): (i64, i64, i64) = self.conn.query_row(
+            "SELECT (SELECT count(*) FROM events),
+                    (SELECT count(*) FROM evidence),
+                    (SELECT count(*) FROM evidence WHERE integrity = 'intact')",
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )?;
+        let to_u64 = |n: i64| u64::try_from(n).unwrap_or(0);
+        Ok(Totals {
+            events: to_u64(events),
+            evidence: to_u64(evidence),
+            evidence_intact: to_u64(intact),
+        })
+    }
+
     /// Statistiques d'une enquête ; `buckets` intervalles pour l'histogramme.
     pub fn overview(&self, investigation_id: InvestigationId, buckets: u32) -> Result<Overview> {
         self.investigation(investigation_id)?;
@@ -508,6 +534,14 @@ mod tests {
         db.insert_events(ev, &batch).unwrap();
 
         let o = db.overview(inv, 4).unwrap();
+        assert_eq!(
+            db.totals().unwrap(),
+            Totals {
+                events: 9,
+                evidence: 1,
+                evidence_intact: 1
+            }
+        );
         assert_eq!((o.events, o.timed), (9, 8));
         assert_eq!((o.first_us, o.last_us), (Some(0), Some(7_000_000)));
         assert_eq!(o.histogram, vec![2, 2, 2, 2]);

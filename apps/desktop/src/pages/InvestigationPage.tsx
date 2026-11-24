@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   FileText,
   FolderX,
-  HardDriveUpload,
   Network,
   Pencil,
   ShieldAlert,
@@ -29,7 +28,6 @@ import { OverviewPanel } from "../overview/OverviewPanel";
 import { useRouter } from "../shell/router";
 
 const MODULES: ReadonlyArray<{ icon: LucideIcon; name: string; text: string; plannedFor: string }> = [
-  { icon: HardDriveUpload, name: "Analyse des preuves", text: "Lecture des journaux et captures réseau, événements extraits.", plannedFor: "phase 2" },
   { icon: Activity, name: "Chronologie", text: "Événements normalisés, triés et filtrables.", plannedFor: "phase 3" },
   { icon: Network, name: "Graphe", text: "Entités et relations reconstituées.", plannedFor: "phase 3" },
   { icon: ShieldAlert, name: "Détections", text: "Règles versionnées et explicables.", plannedFor: "phase 4" },

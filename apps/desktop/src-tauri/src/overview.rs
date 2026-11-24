@@ -87,6 +87,28 @@ pub fn overview(storage: &Storage, investigation_id: i64) -> Result<OverviewDto,
     })
 }
 
+/// Miroir TypeScript : `Totals` dans `apps/desktop/src/api.ts`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TotalsDto {
+    pub events: u64,
+    pub evidence: u64,
+    pub evidence_intact: u64,
+}
+
+// Hors du fil de la fenêtre : la base peut être occupée.
+#[tauri::command(async)]
+pub fn totals(state: tauri::State<'_, AppState>) -> Result<TotalsDto, CommandError> {
+    state.with_storage(|s| {
+        let t = s.totals()?;
+        Ok(TotalsDto {
+            events: t.events,
+            evidence: t.evidence,
+            evidence_intact: t.evidence_intact,
+        })
+    })
+}
+
 // Hors du fil de la fenêtre : calcul long sur une grosse enquête.
 #[tauri::command(async)]
 pub fn investigation_overview(

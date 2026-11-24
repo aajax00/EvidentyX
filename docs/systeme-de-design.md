@@ -4,7 +4,7 @@
 
 ## Principes
 
-L'esthétique est celle d'un outil d'analyste, **sobre**, à la structure inspirée de [COSINT](https://github.com/k0nrd/COSINT) : surfaces sombres légèrement bleutées, bordures fines de 1 px, **angles droits partout (aucun arrondi)**, ni ombres ni dégradés décoratifs, interface compacte. Un seul accent, le **bleu du logo** : focus, sélection, éléments actifs et action principale. **Thème sombre uniquement.**
+Direction artistique « console d'investigation » : fond **bleu nuit profond**, surfaces superposées à peine éclairées par le haut (`--surface-panel`), bordures fines de 1 px, **angles droits partout (aucun arrondi)**. Accent principal : le **bleu du logo** (actions, sélection, focus, données). Accent secondaire **violet**, réservé aux dégradés de marque (`--gradient-brand` : élément actif de la navigation, bandeau du tableau de bord, graphiques) et jamais seul sur une action. Lisibilité d'abord : corps de texte 14 px, titres de panneau 16 px en clair, chiffres clés 28 px ; peu d'éléments par écran, chaque chiffre affiché est réel. **Thème sombre uniquement.**
 
 1. **Une seule source de vérité** : toutes les valeurs visuelles (couleurs, tailles, espacements, durées) sont des variables CSS définies dans [`styles/tokens.css`](../apps/desktop/src/styles/tokens.css). Aucun composant ne contient de valeur codée en dur.
 2. **Hors ligne** : polices IBM Plex Sans et IBM Plex Mono embarquées dans l'application (paquets `@fontsource`, licence SIL OFL 1.1), aucune ressource externe (compatible avec la politique de sécurité du contenu stricte).
@@ -35,12 +35,14 @@ L'application n'a qu'un thème, sombre. Toutes les couleurs sont définies sur `
 | Couleurs de texte | `--color-text` | `text`, `text-muted`, `text-subtle`, `text-on-accent` |
 | Action principale | `--color-primary` | `primary`, `primary-hover`, `text-on-primary` |
 | Couleurs sémantiques | `--color-` | `accent`, `success`, `warning`, `danger`, `info` (+ variantes `-subtle`, `-hover`) |
+| Marque | `--color-violet`, `--gradient-brand`, `--gradient-brand-vertical`, `--surface-panel` | dégradé bleu → violet ; fond des panneaux et cartes |
+| Graphiques | `--chart-1` à `--chart-7` | séries dans l'ordre : bleu, violet, cyan, vert, ambre, rouge, gris |
 | Gravité (phase 4) | `--color-severity-` | `low`, `medium`, `high`, `critical` |
-| Typographie | `--text-`, `--weight-`, `--leading-`, `--tracking-`, `--font-` | `--text-md` (13 px), `--text-2xs` (titres de section), `--font-mono` |
+| Typographie | `--text-`, `--weight-`, `--leading-`, `--tracking-`, `--font-` | `--text-md` (14 px, corps), `--text-lg` (16 px, titres de panneau), `--text-2xl` (28 px, chiffres clés), `--text-3xl` (32 px, titre du tableau de bord), `--text-2xs` (titres de section), `--font-mono` |
 | Espacements | `--space-` | grille de 4 px : `--space-1` (4 px) à `--space-12` (48 px) |
 | Angles | `--radius` | toujours `0` : aucun élément arrondi |
 | Bordures | `--border-width` | `1px` |
-| Contrôles | `--control-` | `sm` (24 px), `md` (30 px) |
+| Contrôles | `--control-` | `sm` (28 px), `md` (34 px) |
 | Animation | `--duration-`, `--ease-` | `fast` (110 ms), `normal` (160 ms), `standard` |
 | Plans | `--z-` | `dropdown`, `overlay`, `modal`, `toast` |
 
@@ -72,8 +74,8 @@ La coque (`src/shell`) structure toutes les pages :
 
 | Élément | Rôle |
 |---|---|
-| Barre latérale | Navigation par groupes, puis les enquêtes actives récentes. Page active : fond accentué et liseré gauche. Sections non disponibles grisées avec la mention « planifiée » et leur échéance en info-bulle. Repliable en barre d'icônes. |
-| En-tête | Fil d'Ariane (section, enquête ouverte) et accès à la palette. |
+| Barre latérale | Navigation par groupes, puis les enquêtes actives récentes. Page active : fond en dégradé de marque et liseré gauche bleu → violet. Sections non disponibles grisées avec la mention « planifiée » et leur échéance en info-bulle. Repliable en barre d'icônes. |
+| En-tête | Fil d'Ariane (section, enquête ouverte) et accès à la palette ; sur le tableau de bord, la devise. |
 | Barre d'état | État du moteur et de la base locale (chemin en info-bulle), nombre d'enquêtes. |
 | Palette de commandes | Recherche sans tenir compte des accents ni de la casse ; ↑ ↓ pour choisir, Entrée pour exécuter, Échap pour fermer. |
 
@@ -87,6 +89,7 @@ Sobres et brèves ; toutes désactivées si le système demande moins d'animatio
 |---|---|---|
 | Écran d'ouverture : le logo se décode en ASCII (caractères brouillés qui se fixent de gauche à droite), puis le logo réel apparaît | Lancement de l'application (`src/motion/SplashScreen.tsx`) ; un clic ou une touche le passe | ~2,4 s |
 | Arrière-plan : points carrés qui dérivent lentement et se relient quand ils se rapprochent | Derrière toute l'interface, visible entre les panneaux (`src/motion/NetworkBackground.tsx`), 30 images/s, en pause fenêtre masquée | continue |
+| Bandeau du tableau de bord : relief en fil de fer bleu → violet, en perspective, qui ondule lentement et s'estompe sous le texte | `src/motion/TerrainBanner.tsx`, 24 images/s ; image fixe si l'animation d'arrière-plan est coupée | continue |
 | Ouverture des boîtes de dialogue et de la palette | Fondu et léger déplacement | 160–180 ms |
 | Changement de page | Fondu et montée de 6 px | 160 ms |
 

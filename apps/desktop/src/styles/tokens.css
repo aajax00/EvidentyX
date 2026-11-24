@@ -1,31 +1,32 @@
 /*
  * Jetons de design EVIDENTYX — seule source des valeurs visuelles.
  *
- * Esthétique « outil d'analyste », sobre : surfaces sombres légèrement bleutées,
- * bordures fines de 1 px, angles droits (aucun arrondi), pas d'ombres ni de
- * dégradés décoratifs. Un seul accent : le bleu du logo (focus, sélection,
- * éléments actifs, action principale). Thème sombre uniquement.
- * Documentation : docs/systeme-de-design.md.
+ * Direction artistique « console d'investigation » : fond bleu nuit profond,
+ * surfaces superposées à peine éclairées par le haut, bordures fines de 1 px,
+ * angles droits (aucun arrondi). Accent principal : le bleu du logo (actions,
+ * sélection, focus, données). Accent secondaire violet, réservé aux dégradés
+ * de marque (élément actif, bandeau, graphiques) : jamais seul sur une action.
+ * Thème sombre uniquement. Documentation : docs/systeme-de-design.md.
  */
 
 :root {
   color-scheme: dark;
 
   /* Surfaces, du plus profond au plus élevé */
-  --color-bg: #0b0f16;
-  --color-surface: #111620;
-  --color-surface-raised: #171d29;
-  --color-surface-hover: #1d2533;
-  --color-surface-sunken: #0d121a;
+  --color-bg: #070a12;
+  --color-surface: #0c111c;
+  --color-surface-raised: #121a29;
+  --color-surface-hover: #182235;
+  --color-surface-sunken: #090d16;
 
   /* Bordures */
-  --color-border: #222b3a;
-  --color-border-strong: #313c4f;
+  --color-border: #1a2234;
+  --color-border-strong: #2a3550;
 
   /* Texte (le niveau « subtle » reste ≥ 4,5:1 sur les surfaces) */
-  --color-text: #e4e8ef;
-  --color-text-muted: #a3adbd;
-  --color-text-subtle: #8792a4;
+  --color-text: #e8ecf4;
+  --color-text-muted: #a6b0c3;
+  --color-text-subtle: #8792a8;
 
   /* Accent : bleu du logo */
   --color-accent: #3d8ff0;
@@ -33,30 +34,48 @@
   --color-accent-subtle: rgb(61 143 240 / 0.12);
   --color-text-on-accent: #ffffff;
 
+  /* Accent secondaire (dégradés de marque, seconde série de graphique) */
+  --color-violet: #8b6cf6;
+  --color-violet-subtle: rgb(139 108 246 / 0.14);
+  --gradient-brand: linear-gradient(90deg, #3d8ff0, #8b6cf6);
+  --gradient-brand-vertical: linear-gradient(180deg, #3d8ff0, #8b6cf6);
+
   /* Action principale */
-  --color-primary: #1f74dc;
-  --color-primary-hover: #2f84ea;
+  --color-primary: #2a7be4;
+  --color-primary-hover: #3b8cf2;
   --color-text-on-primary: #ffffff;
 
   /* États sémantiques */
-  --color-success: #49c48a;
-  --color-success-subtle: rgb(73 196 138 / 0.12);
-  --color-warning: #e0a548;
-  --color-warning-subtle: rgb(224 165 72 / 0.12);
-  --color-danger: #f0696a;
-  --color-danger-subtle: rgb(240 105 106 / 0.12);
-  --color-info: #4fb6e0;
-  --color-info-subtle: rgb(79 182 224 / 0.12);
+  --color-success: #4ccb8f;
+  --color-success-subtle: rgb(76 203 143 / 0.12);
+  --color-warning: #e3a94e;
+  --color-warning-subtle: rgb(227 169 78 / 0.12);
+  --color-danger: #f26b6c;
+  --color-danger-subtle: rgb(242 107 108 / 0.12);
+  --color-info: #3fc1e8;
+  --color-info-subtle: rgb(63 193 232 / 0.12);
 
   /* Gravité des détections (phase 4) */
-  --color-severity-low: #4fb6e0;
-  --color-severity-medium: #e0a548;
+  --color-severity-low: #3fc1e8;
+  --color-severity-medium: #e3a94e;
   --color-severity-high: #ef8650;
-  --color-severity-critical: #f0696a;
+  --color-severity-critical: #f26b6c;
+
+  /* Séries de graphiques, dans l'ordre */
+  --chart-1: #3d8ff0;
+  --chart-2: #8b6cf6;
+  --chart-3: #3fc1e8;
+  --chart-4: #4ccb8f;
+  --chart-5: #e3a94e;
+  --chart-6: #f26b6c;
+  --chart-7: #8792a8;
+
+  /* Panneaux : légère lumière venant du haut */
+  --surface-panel: linear-gradient(180deg, rgb(120 150 220 / 0.045), rgb(120 150 220 / 0) 140px), var(--color-surface);
 
   --color-focus: #63a6f4;
-  --color-scrollbar: #2b3546;
-  --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.5);
+  --color-scrollbar: #263049;
+  --shadow-pop: 0 12px 32px rgb(0 0 0 / 0.55);
 }
 
 :root {
@@ -64,13 +83,14 @@
   --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "IBM Plex Mono", "Cascadia Mono", "SF Mono", Consolas, ui-monospace, monospace;
 
-  --text-2xs: 0.65625rem; /* 10,5px — titres de section en capitales */
-  --text-xs: 0.6875rem; /* 11px */
-  --text-sm: 0.75rem; /* 12px */
-  --text-md: 0.8125rem; /* 13px — corps de texte */
-  --text-lg: 0.9375rem; /* 15px */
-  --text-xl: 1.125rem; /* 18px */
-  --text-2xl: 1.375rem; /* 22px */
+  --text-2xs: 0.6875rem; /* 11px — titres de section en capitales */
+  --text-xs: 0.75rem; /* 12px */
+  --text-sm: 0.8125rem; /* 13px */
+  --text-md: 0.875rem; /* 14px — corps de texte */
+  --text-lg: 1rem; /* 16px — titres de panneau */
+  --text-xl: 1.25rem; /* 20px */
+  --text-2xl: 1.75rem; /* 28px — chiffres clés */
+  --text-3xl: 2rem; /* 32px — titre de page */
 
   --leading-tight: 1.25;
   --leading-normal: 1.5;
@@ -101,8 +121,8 @@
   --border-width: 1px;
 
   /* — Hauteurs de contrôles (compactes) — */
-  --control-sm: 24px;
-  --control-md: 30px;
+  --control-sm: 28px;
+  --control-md: 34px;
 
   /* — Animations discrètes — */
   --duration-fast: 110ms;

@@ -6,6 +6,12 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ## [Non publié]
 
+### Modifié
+
+- Nouvelle direction artistique : fond bleu nuit profond, panneaux éclairés par le haut, accent bleu du logo avec dégradé bleu → violet pour la marque, typographie plus grande et plus lisible (corps 14 px, titres de panneau en clair), angles droits conservés. Logo et écran d'ouverture inchangés.
+- Barre latérale élargie (logo, devise, liseré dégradé sur la page active) ; l'Accueil devient le **Tableau de bord** : bandeau avec relief en fil de fer animé (fixe si l'animation est coupée), chiffres réels (enquêtes actives, événements extraits, preuves enregistrées, preuves intègres), enquêtes récentes avec description.
+- Vue d'ensemble d'une enquête : cartes chiffrées (avec mini-courbe d'activité réelle), courbe d'activité en aire avec repère au survol, anneau des catégories avec pourcentages.
+
 ### Corrigé
 
 - CSV : un en-tête contenant une colonne en double (CIC-IDS2017 répète `Fwd Header Length`) était lu comme une ligne de données ; colonnes alors mal nommées.

@@ -260,6 +260,18 @@ export interface Overview {
   sources: Array<{ evidenceId: number; fileName: string; events: number }>;
 }
 
+/** Miroir de `TotalsDto` : toutes enquêtes confondues. */
+export interface Totals {
+  events: number;
+  evidence: number;
+  /** Preuves intègres à leur dernière vérification. */
+  evidenceIntact: number;
+}
+
+export function getTotals(): Promise<Totals> {
+  return call("totals");
+}
+
 export function getOverview(investigationId: number): Promise<Overview> {
   return call("investigation_overview", { investigationId });
 }
