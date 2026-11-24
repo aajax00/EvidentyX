@@ -36,6 +36,13 @@ Chaque format de preuve (JSON, CSV, Syslog, journaux web, PCAP) doit produire de
 - **Champs repris des messages** (sshd, sudo, pare-feu du noyau), mot pour mot. Les noms d'utilisateur de sshd viennent de l'attaquant : l'adresse est lue à partir de la fin du message, pour qu'un nom piégé (« x from 1.2.3.4 ») ne la falsifie pas. sudo n'indique pas la réussite d'une commande : aucune issue n'est déduite, sauf refus explicite.
 - Catégorie d'après l'application, puis le service (`facility`). Pas de nouvelle dépendance.
 
+## Complément — Journaux d'accès web (étape 2.6)
+
+- Formats `common` et `combined` d'Apache et de Nginx, avec `vhost:port` facultatif en tête (`vhost_combined`) et champs entre guillemets supplémentaires en fin de ligne (`extra.1`, `extra.2`…). Échappements `\"` et `\\` respectés. Détection : au moins 80 % des premières lignes ; testée après Syslog et avant le CSV.
+- L'heure porte toujours son fuseau : base `Explicit`. Champs « - » ignorés.
+- Issue : code inférieur à 400 → réussite, sinon échec (raccourci : refus et erreur serveur non distingués, à affiner en phase 4). Une requête non standard (sonde TLS, binaire) est gardée telle quelle dans `http.request`, sans méthode déduite. Un client donné par son nom (résolution DNS active) va dans l'attribut `client`.
+- Journaux d'erreurs non lus (format libre, propre à chaque serveur). Mesure : 500 000 lignes `combined` générées en 1,4 s (compilation optimisée).
+
 ## Conséquences
 
 - Les étapes 2.4 à 2.7 ajoutent un module par format en réutilisant le cadre et `map_fields`.

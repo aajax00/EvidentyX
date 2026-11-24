@@ -11,13 +11,14 @@
 //! - **progression** et **annulation** ;
 //! - chaque événement garde sa référence exacte à la source.
 //!
-//! Formats pris en charge : JSON Lines, tableau JSON, objets JSON concaténés, CSV, Syslog.
+//! Formats pris en charge : JSON Lines, tableau JSON, objets JSON concaténés, CSV, Syslog, journaux d'accès web.
 
 mod delimited;
 mod fields;
 mod json;
 mod syslog;
 pub mod time;
+mod weblog;
 
 pub use fields::{map_fields, map_fields_with, Hints, Scalar};
 
@@ -44,6 +45,8 @@ pub enum Format {
     Csv,
     /// Syslog (RFC 5424, RFC 3164, format fichier de rsyslog).
     Syslog,
+    /// Journal d'accès web (Apache, Nginx : common, combined).
+    WebAccess,
 }
 
 impl Format {
@@ -54,6 +57,7 @@ impl Format {
             Self::JsonConcatenated => "json_concatenated",
             Self::Csv => "csv",
             Self::Syslog => "syslog",
+            Self::WebAccess => "web_access",
         }
     }
 
@@ -64,6 +68,7 @@ impl Format {
             Self::JsonConcatenated => "Objets JSON",
             Self::Csv => "CSV",
             Self::Syslog => "Syslog",
+            Self::WebAccess => "Journal d'accès web",
         }
     }
 }
@@ -73,6 +78,7 @@ impl Format {
 pub fn detect(file_name: &str, head: &[u8]) -> Option<Format> {
     json::detect(file_name, head)
         .or_else(|| syslog::detect(head))
+        .or_else(|| weblog::detect(head))
         .or_else(|| delimited::detect(file_name, head))
 }
 
@@ -192,6 +198,7 @@ pub fn parse(
     match format {
         Format::Csv => delimited::parse(reader, ctx, sink),
         Format::Syslog => syslog::parse(reader, ctx, sink),
+        Format::WebAccess => weblog::parse(reader, ctx, sink),
         _ => json::parse(format, reader, ctx, sink),
     }
 }
