@@ -10,6 +10,7 @@ mod evidence;
 mod investigations;
 mod settings;
 mod state;
+mod tasks;
 
 use serde::Serialize;
 use state::AppState;
@@ -51,6 +52,7 @@ pub fn run() {
             let dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&dir)?;
             app.manage(AppState::open(dir.join("evidentyx.sqlite")));
+            app.manage(tasks::Tasks::default());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -70,6 +72,7 @@ pub fn run() {
             evidence::verify_evidence,
             evidence::remove_evidence,
             analysis::analyze_evidence,
+            tasks::cancel_task,
         ])
         .run(tauri::generate_context!())
         .expect("échec du démarrage de l'application EVIDENTYX");

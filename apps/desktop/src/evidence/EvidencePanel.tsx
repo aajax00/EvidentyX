@@ -9,19 +9,24 @@ import {
   ScanSearch,
   ShieldCheck,
   Trash2,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import {
   addEvidence,
   analyzeEvidence,
+  cancelTask,
   isTauri,
   listEvidence,
+  newTaskId,
   pickEvidenceFiles,
   removeEvidence,
   toCommandError,
   verifyEvidence,
+  type AnalysisReport,
   type Evidence,
   type IntegrityStatus,
+  type TaskProgress,
 } from "../api";
 import { Badge, Button, Dialog, EmptyState, IconButton, Panel, Spinner, useToast } from "../components/ui";
 import { formatBytes, formatDateTime, formatRelative, shortDigest } from "../format";
@@ -45,6 +50,92 @@ function baseName(path: string): string {
   return path.split(/[\\/]/).pop() ?? path;
 }
 
+/** Tâche longue en cours : identifiant (pour l'annuler) et progression. */
+interface Running {
+  taskId: string;
+  progress: TaskProgress | null;
+}
+
+const n = (v: number) => v.toLocaleString("fr-FR");
+
+function ProgressLine({ label, progress }: { label: string; progress: TaskProgress | null }) {
+  const pct = progress && progress.total > 0 ? Math.min(100, Math.floor((progress.done / progress.total) * 100)) : null;
+  return (
+    <div className="evidence-progress">
+      <p className="evidence-item__events">
+        {label}
+        {progress && pct !== null && ` · ${pct} % · ${formatBytes(progress.done)} sur ${formatBytes(progress.total)}`}
+      </p>
+      <div
+        className="evidence-progress__bar"
+        role="progressbar"
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pct ?? undefined}
+      >
+        <span style={{ width: `${pct ?? 0}%` }} />
+      </div>
+    </div>
+  );
+}
+
+/** Rapport d'analyse : enregistrements lus, retenus, déjà présents, illisibles. */
+function ReportDialog({ fileName, report: r, onClose }: { fileName: string; report: AnalysisReport; onClose: () => void }) {
+  const unit = r.format.startsWith("PCAP") ? "Paquet" : "Ligne";
+  const rows: Array<[string, string]> = [
+    ["Format", r.format],
+    ...(r.layout ? [["Structure", r.layout] as [string, string]] : []),
+    ...(r.format === "CSV" ? [["Colonne d'heure", r.timeField ?? "aucune reconnue"] as [string, string]] : []),
+    ["Enregistrements lus", n(r.records)],
+    ["Événements retenus (nouveaux)", n(r.inserted)],
+    ["Déjà présents (analyse précédente)", n(r.duplicates)],
+    ["Illisibles (ignorés)", n(r.errors)],
+  ];
+  return (
+    <Dialog
+      title="Rapport d'analyse"
+      description={`« ${fileName} »`}
+      onClose={onClose}
+      footer={
+        <Button variant="primary" onClick={onClose} autoFocus>
+          Fermer
+        </Button>
+      }
+    >
+      <dl className="analysis-report">
+        {rows.map(([k, v]) => (
+          <div key={k} className="analysis-report__row">
+            <dt>{k}</dt>
+            <dd className={k === "Format" || k === "Structure" ? undefined : "mono"}>{v}</dd>
+          </div>
+        ))}
+      </dl>
+      {r.firstErrors.length > 0 && (
+        <>
+          <p className="analysis-report__subtitle">
+            {r.errors > r.firstErrors.length
+              ? r.firstErrors.length === 1
+                ? `Premier enregistrement illisible sur ${n(r.errors)}`
+                : `${r.firstErrors.length} premiers enregistrements illisibles sur ${n(r.errors)}`
+              : "Enregistrements illisibles"}
+          </p>
+          <ul className="analysis-report__errors">
+            {r.firstErrors.map((e) => (
+              <li key={`${e.line}-${e.byteOffset}`}>
+                <span className="mono">
+                  {unit} {n(e.line)} · octet {n(e.byteOffset)}
+                </span>
+                <span>{e.message}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </Dialog>
+  );
+}
+
 /**
  * Preuves d'une enquête : ajout (sélecteur ou glisser-déposer), empreinte
  * SHA-256, vérification d'intégrité, retrait. Les fichiers ne sont jamais
@@ -54,9 +145,10 @@ export function EvidencePanel({ investigationId, readOnly }: { investigationId: 
   const { notify } = useToast();
   const { refresh } = useInvestigations();
   const [items, setItems] = useState<Evidence[] | null>(null);
-  const [pending, setPending] = useState<string[]>([]);
+  const [pending, setPending] = useState<Array<Running & { path: string }>>([]);
   const [verifying, setVerifying] = useState<Set<number>>(new Set());
-  const [analyzing, setAnalyzing] = useState<Set<number>>(new Set());
+  const [analyzing, setAnalyzing] = useState<Map<number, Running>>(new Map());
+  const [report, setReport] = useState<{ fileName: string; report: AnalysisReport } | null>(null);
   const [toRemove, setToRemove] = useState<Evidence | null>(null);
   const [removing, setRemoving] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -72,19 +164,20 @@ export function EvidencePanel({ investigationId, readOnly }: { investigationId: 
   const addPaths = useCallback(
     async (paths: string[]) => {
       if (paths.length === 0) return;
-      setPending((p) => [...p, ...paths]);
+      const tasks = paths.map((path) => ({ path, taskId: newTaskId(), progress: null }));
+      setPending((p) => [...p, ...tasks]);
       let added = 0;
-      for (const path of paths) {
+      for (const { path, taskId } of tasks) {
         try {
-          await addEvidence(investigationId, path);
+          await addEvidence(investigationId, path, taskId, (progress) =>
+            setPending((p) => p.map((t) => (t.taskId === taskId ? { ...t, progress } : t))),
+          );
           added++;
         } catch (e) {
-          notify(`${baseName(path)} : ${toCommandError(e).message}`, "danger");
+          const err = toCommandError(e);
+          notify(`${baseName(path)} : ${err.code === "cancelled" ? "ajout annulé" : err.message}`, err.code === "cancelled" ? "success" : "danger");
         } finally {
-          setPending((p) => {
-            const i = p.indexOf(path);
-            return i < 0 ? p : [...p.slice(0, i), ...p.slice(i + 1)];
-          });
+          setPending((p) => p.filter((t) => t.taskId !== taskId));
         }
       }
       if (added > 0) {
@@ -162,31 +255,30 @@ export function EvidencePanel({ investigationId, readOnly }: { investigationId: 
   }
 
   async function analyze(e: Evidence) {
-    setAnalyzing((s) => new Set([...s, e.id]));
-    try {
-      const r = await analyzeEvidence(e.id);
-      const n = (v: number) => v.toLocaleString("fr-FR");
-      const parts = [`${r.format} · ${n(r.inserted)} événement${r.inserted > 1 ? "s" : ""} extrait${r.inserted > 1 ? "s" : ""}`];
-      if (r.format !== "CSV" && r.layout) parts.push(r.layout);
-      if (r.timeField) parts.push(`heure : ${r.timeField}`);
-      else if (r.format === "CSV") parts.push("aucune colonne d'heure reconnue");
-      if (r.duplicates > 0) parts.push(`${n(r.duplicates)} déjà présent${r.duplicates > 1 ? "s" : ""}`);
-      if (r.errors > 0) {
-        const first = r.firstErrors[0];
-        parts.push(`${n(r.errors)} enregistrement${r.errors > 1 ? "s" : ""} illisible${r.errors > 1 ? "s" : ""}${first ? ` (${r.format.startsWith("PCAP") ? "paquet" : "ligne"} ${n(first.line)} : ${first.message})` : ""}`);
-      }
-      notify(`« ${e.fileName} » : ${parts.join(" · ")}.`, r.errors > 0 && r.inserted === 0 ? "danger" : "success");
-      refresh();
-    } catch (err) {
-      notify(`« ${e.fileName} » : ${toCommandError(err).message}`, "danger");
-    } finally {
-      setAnalyzing((s) => {
-        const next = new Set(s);
-        next.delete(e.id);
+    const taskId = newTaskId();
+    const update = (running: Running | null) =>
+      setAnalyzing((m) => {
+        const next = new Map(m);
+        if (running) next.set(e.id, running);
+        else next.delete(e.id);
         return next;
       });
+    update({ taskId, progress: null });
+    try {
+      const r = await analyzeEvidence(e.id, taskId, (progress) => update({ taskId, progress }));
+      setReport({ fileName: e.fileName, report: r });
+      refresh();
+    } catch (err) {
+      const error = toCommandError(err);
+      notify(`« ${e.fileName} » : ${error.message}`, error.code === "cancelled" ? "success" : "danger");
+    } finally {
+      update(null);
       reload();
     }
+  }
+
+  function cancel(taskId: string) {
+    cancelTask(taskId).catch((e: unknown) => notify(toCommandError(e).message, "danger"));
   }
 
   async function copy(sha256: string) {
@@ -264,11 +356,15 @@ export function EvidencePanel({ investigationId, readOnly }: { investigationId: 
                     <p className="evidence-item__path mono" title={e.path}>
                       {e.path}
                     </p>
-                    <p className="evidence-item__events">
-                      {e.eventCount === 0
-                        ? "Non analysée"
-                        : `${e.eventCount.toLocaleString("fr-FR")} événement${e.eventCount > 1 ? "s" : ""} extrait${e.eventCount > 1 ? "s" : ""}`}
-                    </p>
+                    {analyzing.has(e.id) ? (
+                      <ProgressLine label="Analyse en cours" progress={analyzing.get(e.id)?.progress ?? null} />
+                    ) : (
+                      <p className="evidence-item__events">
+                        {e.eventCount === 0
+                          ? "Non analysée"
+                          : `${n(e.eventCount)} événement${e.eventCount > 1 ? "s" : ""} extrait${e.eventCount > 1 ? "s" : ""}`}
+                      </p>
+                    )}
                   </div>
                   <span className="evidence-item__size mono">{formatBytes(e.sizeBytes)}</span>
                   <span className="evidence-item__digest">
@@ -282,7 +378,11 @@ export function EvidencePanel({ investigationId, readOnly }: { investigationId: 
                   <span className="evidence-item__actions">
                     {!readOnly &&
                       (analyzing.has(e.id) ? (
-                        <Spinner size="sm" label="Analyse en cours" />
+                        <IconButton
+                          icon={X}
+                          label="Annuler l'analyse"
+                          onClick={() => cancel(analyzing.get(e.id)?.taskId ?? "")}
+                        />
                       ) : (
                         <IconButton
                           icon={ScanSearch}
@@ -302,20 +402,27 @@ export function EvidencePanel({ investigationId, readOnly }: { investigationId: 
                 </li>
               );
             })}
-            {pending.map((path, i) => (
-              <li key={`pending-${i}-${path}`} className="evidence-item evidence-item--pending">
+            {pending.map((t) => (
+              <li key={t.taskId} className="evidence-item evidence-item--pending">
                 <span className="evidence-item__icon" aria-hidden="true">
                   <Spinner size="sm" />
                 </span>
                 <div className="evidence-item__main">
-                  <p className="evidence-item__name">{baseName(path)}</p>
-                  <p className="evidence-item__path mono">Calcul de l'empreinte SHA-256…</p>
+                  <p className="evidence-item__name" title={t.path}>
+                    {baseName(t.path)}
+                  </p>
+                  <ProgressLine label="Calcul de l'empreinte SHA-256" progress={t.progress} />
                 </div>
+                <span className="evidence-item__actions">
+                  <IconButton icon={X} label="Annuler l'ajout" onClick={() => cancel(t.taskId)} />
+                </span>
               </li>
             ))}
           </ul>
         )}
       </div>
+
+      {report && <ReportDialog fileName={report.fileName} report={report.report} onClose={() => setReport(null)} />}
 
       {toRemove && (
         <Dialog

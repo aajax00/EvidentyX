@@ -6,10 +6,13 @@
 //!   événements extraits sont retirés et l'analyse est refusée ;
 //! - les événements sont enregistrés par lots ; une réanalyse n'ajoute que
 //!   ce qui manque (unicité preuve + décalage) ;
-//! - la lecture se fait hors du fil de l'interface.
+//! - la lecture se fait hors du fil de l'interface, avec progression ;
+//! - une analyse annulée ne laisse aucun des événements qu'elle a ajoutés
+//!   (ceux des analyses précédentes restent).
 
 use crate::error::CommandError;
 use crate::state::AppState;
+use crate::tasks::{to_channel, TaskProgress, Tasks, Throttled};
 use evidentyx_core::{EvidenceId, IntegrityStatus, NewEvent};
 use evidentyx_evidence::{open_read_only, EvidenceError, HashingReader};
 use evidentyx_parser::{detect, parse, Format, ParseContext, ParseError};
@@ -18,6 +21,7 @@ use serde::Serialize;
 use std::io::Read;
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
+use tauri::ipc::Channel;
 use tauri::Manager;
 
 /// Taille des lots d'événements enregistrés en une transaction.
@@ -78,16 +82,19 @@ type StorageOp<'a> = dyn FnMut(&mut Storage) -> Result<(), CommandError> + 'a;
 /// Accès au stockage : exécute une opération sous verrou (testable sans Tauri).
 type WithStorage<'a> = dyn Fn(&mut StorageOp<'_>) -> Result<(), CommandError> + 'a;
 
-/// Analyse complète d'une preuve.
+/// Analyse complète d'une preuve. `on_progress(octets lus, taille)`.
 pub fn analyze(
     with_storage: &WithStorage<'_>,
     evidence_id: i64,
+    on_progress: &mut dyn FnMut(u64, u64),
+    cancel: &AtomicBool,
 ) -> Result<AnalysisReportDto, CommandError> {
     let id = EvidenceId::new(evidence_id);
-    let mut evidence = None;
+    let (mut evidence, mut mark) = (None, 0);
     with_storage(&mut |s| {
         let e = s.evidence(id)?;
         s.investigation(e.investigation_id)?.ensure_editable()?;
+        mark = s.last_event_id()?;
         evidence = Some(e);
         Ok(())
     })?;
@@ -109,8 +116,8 @@ pub fn analyze(
 
     // Lecture complète avec empreinte, enregistrement par lots.
     let mut reader = HashingReader::new(open_read_only(path, evidence.size_bytes)?);
-    let cancel = AtomicBool::new(false);
-    let mut progress = |_: u64| {};
+    let total = evidence.size_bytes;
+    let mut progress = |done: u64| on_progress(done, total);
     let mut batch: Vec<NewEvent> = Vec::with_capacity(BATCH);
     let (mut inserted, mut duplicates) = (0u64, 0u64);
     let mut flush = |batch: &mut Vec<NewEvent>| -> Result<(), String> {
@@ -143,11 +150,21 @@ pub fn analyze(
                 evidence_id: id,
                 reference_time: evidence.file_modified_at,
                 on_progress: &mut progress,
-                cancel: &cancel,
+                cancel,
             },
             &mut sink,
         )
     };
+    if matches!(report, Err(ParseError::Cancelled)) {
+        with_storage(&mut |s| {
+            s.delete_events_after(id, mark)?;
+            Ok(())
+        })?;
+        return Err(CommandError::new(
+            "cancelled",
+            "Analyse annulée : les événements de cette analyse ont été retirés.",
+        ));
+    }
     let outcome = report.map_err(parse_error).and_then(|r| {
         flush(&mut batch).map_err(|m| CommandError::new("storage", m))?;
         Ok(r)
@@ -201,10 +218,20 @@ pub fn analyze(
 pub async fn analyze_evidence(
     app: tauri::AppHandle,
     evidence_id: i64,
+    task_id: String,
+    on_progress: Channel<TaskProgress>,
 ) -> Result<AnalysisReportDto, CommandError> {
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<AppState>();
-        analyze(&|f| state.with_storage(|s| f(s)), evidence_id)
+        let tasks = app.state::<Tasks>();
+        let task = tasks.start(task_id);
+        let mut progress = Throttled::new(to_channel(on_progress));
+        analyze(
+            &|f| state.with_storage(|s| f(s)),
+            evidence_id,
+            &mut |done, total| progress.update(done, total),
+            task.flag(),
+        )
     })
     .await
     .map_err(|e| CommandError::new("io", format!("Analyse interrompue : {e}")))?
@@ -246,7 +273,12 @@ mod tests {
     }
 
     fn run(db: &RefCell<Storage>, id: i64) -> Result<AnalysisReportDto, CommandError> {
-        analyze(&|f| f(&mut db.borrow_mut()), id)
+        analyze(
+            &|f| f(&mut db.borrow_mut()),
+            id,
+            &mut |_, _| {},
+            &AtomicBool::new(false),
+        )
     }
 
     const LOG: &[u8] = b"{\"ts\":\"2026-11-16T00:00:21Z\",\"user\":\"admin\",\"action\":\"login\",\"status\":\"failed\"}\n{broken\n{\"ts\":\"2026-11-16T00:01:00Z\",\"message\":\"ok\"}\n";
@@ -293,6 +325,73 @@ mod tests {
         assert_eq!(err.code, "parse");
         let e = db.borrow().evidence(EvidenceId::new(id)).unwrap();
         assert_eq!(e.integrity, IntegrityStatus::Intact);
+    }
+
+    #[test]
+    fn annulation_retire_les_ajouts_et_garde_l_analyse_precedente() {
+        let (db, id, dir, _) = setup(LOG, "auth.jsonl");
+        run(&db, id).unwrap();
+        // Seconde preuve de plus d'un lot, dans la même enquête.
+        let big: String = (0..BATCH + 500)
+            .map(|i| format!("{{\"message\":\"m{i}\"}}\n"))
+            .collect();
+        let p2 = dir.path().join("gros.jsonl");
+        std::fs::write(&p2, &big).unwrap();
+        let fp = evidentyx_evidence::fingerprint(&p2, |_, _| {}, &AtomicBool::new(false)).unwrap();
+        let inv = db
+            .borrow()
+            .evidence(EvidenceId::new(id))
+            .unwrap()
+            .investigation_id;
+        let id2 = db
+            .borrow_mut()
+            .add_evidence(
+                inv,
+                &evidentyx_storage::NewEvidence {
+                    file_name: fp.file_name,
+                    path: fp.path.to_str().unwrap().into(),
+                    size_bytes: fp.size_bytes,
+                    sha256: fp.sha256,
+                    file_modified_at: fp.modified_at,
+                },
+            )
+            .unwrap()
+            .id
+            .get();
+        // Annulation juste après l'enregistrement du premier lot.
+        let cancel = AtomicBool::new(false);
+        let calls = std::cell::Cell::new(0);
+        let err = analyze(
+            &|f| {
+                let r = f(&mut db.borrow_mut());
+                calls.set(calls.get() + 1);
+                if calls.get() == 2 {
+                    cancel.store(true, std::sync::atomic::Ordering::Relaxed);
+                }
+                r
+            },
+            id2,
+            &mut |_, _| {},
+            &cancel,
+        )
+        .unwrap_err();
+        assert_eq!(err.code, "cancelled");
+        assert_eq!(db.borrow().count_events(inv).unwrap(), 2);
+        // Sans annulation : progression jusqu'à la taille du fichier.
+        let mut seen = Vec::new();
+        analyze(
+            &|f| f(&mut db.borrow_mut()),
+            id2,
+            &mut |done, total| seen.push((done, total)),
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        let size = big.len() as u64;
+        assert_eq!(seen.last(), Some(&(size, size)));
+        assert_eq!(
+            db.borrow().count_events(inv).unwrap(),
+            2 + BATCH as u64 + 500
+        );
     }
 
     #[test]

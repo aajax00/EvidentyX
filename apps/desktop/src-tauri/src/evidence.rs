@@ -6,12 +6,15 @@
 
 use crate::error::CommandError;
 use crate::state::AppState;
+use crate::tasks::{to_channel, TaskProgress, Tasks, Throttled};
 use evidentyx_core::{Evidence, EvidenceId, IntegrityStatus, InvestigationId};
 use evidentyx_evidence::{current_digest, fingerprint, EvidenceError, Fingerprint};
 use evidentyx_storage::{NewEvidence, Storage};
 use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
+use tauri::ipc::Channel;
+use tauri::Manager;
 
 /// Miroir TypeScript : `Evidence` dans `apps/desktop/src/api.ts`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -106,10 +109,22 @@ pub fn list(storage: &Storage, investigation_id: i64) -> CommandResult<Vec<Evide
         .collect())
 }
 
-/// Calcule l'empreinte hors du fil de l'interface.
-async fn fingerprint_in_background(path: PathBuf) -> CommandResult<Fingerprint> {
+/// Calcule l'empreinte hors du fil de l'interface, avec progression et annulation.
+async fn fingerprint_in_background(
+    app: tauri::AppHandle,
+    path: PathBuf,
+    task_id: String,
+    on_progress: Channel<TaskProgress>,
+) -> CommandResult<Fingerprint> {
     tauri::async_runtime::spawn_blocking(move || {
-        fingerprint(&path, |_, _| {}, &AtomicBool::new(false))
+        let tasks = app.state::<Tasks>();
+        let task = tasks.start(task_id);
+        let mut progress = Throttled::new(to_channel(on_progress));
+        fingerprint(
+            &path,
+            |done, total| progress.update(done, total),
+            task.flag(),
+        )
     })
     .await
     .map_err(|e| CommandError::new("io", format!("Lecture interrompue : {e}")))?
@@ -129,16 +144,19 @@ pub fn list_evidence(
 
 #[tauri::command]
 pub async fn add_evidence(
+    app: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
     investigation_id: i64,
     path: String,
+    task_id: String,
+    on_progress: Channel<TaskProgress>,
 ) -> CommandResult<EvidenceDto> {
     // Vérification rapide avant une lecture potentiellement longue.
     state.with_storage(|s| {
         Ok(s.investigation(InvestigationId::new(investigation_id))?
             .ensure_editable()?)
     })?;
-    let fp = fingerprint_in_background(PathBuf::from(path)).await?;
+    let fp = fingerprint_in_background(app, PathBuf::from(path), task_id, on_progress).await?;
     state.with_storage(|s| record_new(s, investigation_id, fp))
 }
 

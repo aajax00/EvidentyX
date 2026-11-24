@@ -305,6 +305,27 @@ impl Storage {
         Ok(EventPage { events, next })
     }
 
+    /// Plus grand identifiant d'événement attribué (0 si aucun). Les
+    /// identifiants ne sont jamais réutilisés : sert à repérer les événements
+    /// ajoutés par une analyse.
+    pub fn last_event_id(&self) -> Result<i64> {
+        Ok(self.conn.query_row(
+            "SELECT COALESCE((SELECT seq FROM sqlite_sequence WHERE name = 'events'), 0)",
+            [],
+            |r| r.get(0),
+        )?)
+    }
+
+    /// Supprime les événements d'une preuve ajoutés après `after_id` (analyse
+    /// annulée) ; ceux des analyses précédentes sont conservés.
+    pub fn delete_events_after(&mut self, evidence_id: EvidenceId, after_id: i64) -> Result<u64> {
+        let n = self.conn.execute(
+            "DELETE FROM events WHERE evidence_id = ?1 AND id > ?2",
+            [evidence_id.get(), after_id],
+        )?;
+        Ok(n as u64)
+    }
+
     /// Supprime les événements extraits d'une preuve (avant une réanalyse).
     pub fn delete_events_for_evidence(&mut self, evidence_id: EvidenceId) -> Result<u64> {
         let evidence = self.evidence(evidence_id)?;
@@ -368,6 +389,22 @@ mod tests {
             basis: TimeBasis::InferredYear,
         });
         e
+    }
+
+    #[test]
+    fn annulation_retire_seulement_les_ajouts_recents() {
+        let (mut db, inv, ev) = setup();
+        assert_eq!(db.last_event_id().unwrap(), 0);
+        db.insert_events(ev, &[event(ev, 0, None), event(ev, 1, None)])
+            .unwrap();
+        let mark = db.last_event_id().unwrap();
+        assert_eq!(mark, 2);
+        db.insert_events(ev, &[event(ev, 2, None)]).unwrap();
+        assert_eq!(db.delete_events_after(ev, mark).unwrap(), 1);
+        assert_eq!(db.count_events(inv).unwrap(), 2);
+        // Les identifiants ne sont pas réutilisés après suppression.
+        db.insert_events(ev, &[event(ev, 3, None)]).unwrap();
+        assert_eq!(db.last_event_id().unwrap(), 4);
     }
 
     #[test]
