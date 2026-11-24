@@ -22,7 +22,7 @@ Objectif : importer des preuves dans une enquête et en extraire des événement
 - [x] **Étape 2.2** — Modèle d'événement canonique : horodatage UTC avec précision et incertitude, référence à la source (preuve, décalage, ligne ou paquet), champs normalisés (hôte, adresses, utilisateur, action, résultat), champs bruts conservés ; stockage des événements (ADR)
 - [x] **Étape 2.3** — Crate `parser` : cadre commun (détection du format, lecture en flux, erreurs par ligne sans interrompre l'import), JSON et JSON Lines
 - [x] **Étape 2.4** — CSV : séparateur et en-têtes détectés, choix des colonnes d'horodatage
-- [ ] **Étape 2.5** — Syslog RFC 3164 et RFC 5424
+- [x] **Étape 2.5** — Syslog RFC 3164 et RFC 5424
 - [ ] **Étape 2.6** — Journaux d'accès Apache et Nginx (formats common et combined)
 - [ ] **Étape 2.7** — PCAP et PCAPNG : paquets, flux réseau de base (adresses, ports, protocoles)
 - [ ] **Étape 2.8** — Import dans l'application : sélection ou glisser-déposer, progression, annulation, rapport d'import (lignes lues, retenues, ignorées, erreurs)

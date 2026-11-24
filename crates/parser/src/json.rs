@@ -142,7 +142,7 @@ pub fn parse(
         Format::JsonArray | Format::JsonConcatenated => {
             values(&mut reader, &mut em, format == Format::JsonArray)?
         }
-        Format::Csv => unreachable!("le CSV est lu par le module delimited"),
+        Format::Csv | Format::Syslog => unreachable!("format lu par un autre module"),
     }
     Ok(em.report)
 }
@@ -194,7 +194,10 @@ fn lines(reader: &mut impl BufRead, em: &mut Emitter<'_, '_>) -> Result<(), Pars
 
 /// Lit une ligne ; au-delà de `MAX_RECORD_BYTES`, consomme le reste sans le garder.
 /// Renvoie le nombre d'octets consommés (fin de ligne comprise).
-fn read_line_bounded(reader: &mut impl BufRead, buf: &mut Vec<u8>) -> std::io::Result<usize> {
+pub(crate) fn read_line_bounded(
+    reader: &mut impl BufRead,
+    buf: &mut Vec<u8>,
+) -> std::io::Result<usize> {
     let mut total = 0;
     loop {
         let available = reader.fill_buf()?;
@@ -217,7 +220,7 @@ fn read_line_bounded(reader: &mut impl BufRead, buf: &mut Vec<u8>) -> std::io::R
     }
 }
 
-fn trim_ascii(b: &[u8]) -> &[u8] {
+pub(crate) fn trim_ascii(b: &[u8]) -> &[u8] {
     let start = b
         .iter()
         .position(|c| !c.is_ascii_whitespace())
@@ -420,6 +423,7 @@ mod tests {
             input.as_bytes(),
             ParseContext {
                 evidence_id: EvidenceId::new(9),
+                reference_time: None,
                 on_progress: &mut progress,
                 cancel: &cancel,
             },
@@ -538,6 +542,7 @@ pas du json\n\
             JSONL.as_bytes(),
             ParseContext {
                 evidence_id: EvidenceId::new(1),
+                reference_time: None,
                 on_progress: &mut progress,
                 cancel: &cancel,
             },

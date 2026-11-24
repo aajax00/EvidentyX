@@ -20,6 +20,7 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 - Analyse des preuves : bouton « Analyser » qui reconnaît le format et extrait les événements ; lecture refusée si la taille ou l'empreinte SHA-256 du fichier ne correspond plus (événements retirés, preuve marquée « modifiée ») ; réanalyse sans doublon ; bilan (événements, lignes illisibles avec leur numéro) ([ADR 0005](docs/decisions/0005-cadre-de-lecture.md)).
 - Crate `evidentyx-parser` : cadre commun (détection, lecture en flux, erreurs par enregistrement, progression, annulation), correspondance des champs vers le modèle d'événement, lecture des heures ISO 8601 / RFC 3339 et époque Unix ; formats JSON Lines, tableau JSON et objets JSON concaténés.
 - Lecture CSV (crate `csv`, RFC 4180) : séparateur deviné (virgule, point-virgule, tabulation, barre verticale), en-tête reconnu ou colonnes numérotées, champs entre guillemets et sur plusieurs lignes, fins de ligne CRLF (ligne et décalage exacts), colonne d'heure choisie automatiquement (colonnes date et heure séparées combinées), noms de colonnes français reconnus, sorties CSV d'EvtxECmd (EZ Tools) reconnues ; colonne d'heure et structure indiquées dans le bilan d'analyse.
+- Lecture Syslog : RFC 5424 (données structurées), RFC 3164 (année déduite de la date du fichier et signalée) et format fichier de rsyslog ; utilisateur, adresse et issue repris des messages de sshd, sudo et du pare-feu du noyau quand ils y figurent.
 
 ## [0.1.0] - 2026-11-19
 
