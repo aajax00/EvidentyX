@@ -87,5 +87,18 @@ fn vue_d_ensemble() {
                 t.elapsed()
             );
         }
+        for by in [
+            evidentyx_storage::GroupBy::Ip,
+            evidentyx_storage::GroupBy::User,
+            evidentyx_storage::GroupBy::Host,
+            evidentyx_storage::GroupBy::Flow,
+        ] {
+            let t = Instant::now();
+            let g = db
+                .groups(inv.id, &Default::default(), by, 200)
+                .unwrap()
+                .len();
+            println!("  regroupement {by:?} : {g} groupes en {:.2?}", t.elapsed());
+        }
     }
 }

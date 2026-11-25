@@ -14,6 +14,7 @@ import { Button, EmptyState, SearchField, SegmentedControl, Select, Spinner } fr
 import { useSettings } from "../settings/SettingsProvider";
 import { useRouter } from "../shell/router";
 import { EventDrawer } from "./EventDrawer";
+import { GroupsView, type Pivot } from "./GroupsView";
 import { BASIS_LABELS, endpoint, eventClock, eventDate, formatMs, isUncertain, kindLabel, zoneLabel } from "./eventFormat";
 import "./timeline.css";
 
@@ -39,8 +40,9 @@ function fieldToUs(value: string, end: boolean, utc: boolean): number | undefine
   return ms * 1000 + (end ? 59_999_999 : 0);
 }
 
-function toFilter(d: Draft, utc: boolean): EventFilter {
+function toFilter(d: Draft, utc: boolean, flow: EventFilter["flow"] | null): EventFilter {
   const f: EventFilter = {};
+  if (flow) f.flow = flow;
   const from = fieldToUs(d.from, false, utc);
   const to = fieldToUs(d.to, true, utc);
   if (from !== undefined) f.fromUs = from;
@@ -72,6 +74,17 @@ export function TimelinePage({ id }: { id: number }) {
   const { settings, update } = useSettings();
   const utc = settings.displayUtc;
   const [draft, setDraft] = useState<Draft>(EMPTY);
+  /** Flux réseau choisi par pivot (pas de champ de saisie). */
+  const [flow, setFlow] = useState<EventFilter["flow"] | null>(null);
+  const [view, setView] = useState<"events" | "groups">("events");
+
+  /** L'entité choisie remplace les autres critères d'entité ; période et autres filtres restent. */
+  const pivot = (p: Pivot) => {
+    setDraft((d) => ({ ...d, ip: "", user: "", host: "", ...(p.kind === "flow" ? {} : { [p.kind]: p.value }) }));
+    setFlow(p.kind === "flow" ? { sourceIp: p.sourceIp, destinationIp: p.destinationIp, destinationPort: p.destinationPort } : null);
+    setSelected(null);
+    setView("events");
+  };
   const [filter, setFilter] = useState<EventFilter>({});
   const [total, setTotal] = useState<number | null>(null);
   /** Génération du filtre : les réponses d'un filtre précédent sont ignorées. */
@@ -81,12 +94,12 @@ export function TimelinePage({ id }: { id: number }) {
   // Saisie appliquée après une courte pause (pas une requête par touche).
   useEffect(() => {
     const t = setTimeout(() => {
-      const next = toFilter(draft, utc);
+      const next = toFilter(draft, utc, flow);
       // Même filtre : rien à recharger.
       setFilter((cur) => (JSON.stringify(cur) === JSON.stringify(next) ? cur : next));
     }, 300);
     return () => clearTimeout(t);
-  }, [draft, utc]);
+  }, [draft, utc, flow]);
 
   useEffect(() => {
     const gen = ++generation.current;
@@ -116,7 +129,7 @@ export function TimelinePage({ id }: { id: number }) {
     const observer = new ResizeObserver(() => setViewport(el.clientHeight));
     observer.observe(el);
     return () => observer.disconnect();
-  }, [overview]);
+  }, [overview, view]);
 
   const count = total ?? 0;
   const height = Math.min(count * ROW, MAX_PX);
@@ -209,6 +222,15 @@ export function TimelinePage({ id }: { id: number }) {
         </p>
         <span className="timeline-page__zone">
           <SegmentedControl
+            label="Affichage"
+            value={view}
+            onChange={setView}
+            options={[
+              { value: "events", label: "Événements" },
+              { value: "groups", label: "Regroupements" },
+            ]}
+          />
+          <SegmentedControl
             label="Fuseau d'affichage"
             value={utc ? "utc" : "local"}
             onChange={(v) => void update({ displayUtc: v === "utc" }).catch((e: unknown) => setError(toCommandError(e).message))}
@@ -287,13 +309,32 @@ export function TimelinePage({ id }: { id: number }) {
           au
           <input type="datetime-local" className="ui-input" value={draft.to} onChange={(e) => set("to")(e.target.value)} />
         </label>
-        {JSON.stringify(draft) !== JSON.stringify(EMPTY) && (
-          <Button size="sm" variant="ghost" icon={RotateCcw} onClick={() => setDraft(EMPTY)}>
+        {flow && (
+          <span className="timeline-filters__chip mono">
+            Flux {flow.sourceIp} → {endpoint(flow.destinationIp, flow.destinationPort)}
+            <button type="button" aria-label="Retirer le filtre de flux" onClick={() => setFlow(null)}>
+              ×
+            </button>
+          </span>
+        )}
+        {(flow || JSON.stringify(draft) !== JSON.stringify(EMPTY)) && (
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={RotateCcw}
+            onClick={() => {
+              setDraft(EMPTY);
+              setFlow(null);
+            }}
+          >
             Réinitialiser
           </Button>
         )}
       </div>
 
+      {view === "groups" ? (
+        <GroupsView investigationId={id} filter={filter} utc={utc} onPivot={pivot} />
+      ) : (
       <div className="timeline-table" role="table" aria-label="Chronologie" aria-rowcount={count}>
         <div className="timeline-row timeline-row--head" role="row">
           <span role="columnheader">Date</span>
@@ -361,12 +402,14 @@ export function TimelinePage({ id }: { id: number }) {
           </div>
         </div>
       </div>
+      )}
 
       {selected && (
         <EventDrawer
           event={selected}
           evidenceName={names.get(selected.evidenceId) ?? `preuve n° ${selected.evidenceId}`}
           utc={utc}
+          onPivot={pivot}
           onClose={() => setSelected(null)}
         />
       )}

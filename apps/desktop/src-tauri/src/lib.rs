@@ -77,6 +77,7 @@ pub fn run() {
             tasks::cancel_task,
             timeline::events_window,
             timeline::events_count,
+            timeline::event_groups,
             overview::investigation_overview,
         ])
         .run(tauri::generate_context!())

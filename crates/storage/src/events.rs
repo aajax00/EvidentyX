@@ -31,14 +31,50 @@ pub struct EventFilter {
     pub outcome: Option<Outcome>,
     /// Qualité de l'heure : incertaine (fuseau supposé, année déduite) ou absente.
     pub time: Option<TimeQuality>,
-    /// Début d'adresse, en source ou en destination (« 203.0.113. »).
+    /// Adresse en source ou en destination : exacte si c'est une adresse
+    /// complète (« 203.0.113.7 »), sinon début d'adresse (« 203.0.113. »).
     pub ip: Option<String>,
+    /// Flux réseau exact : source, destination et port de destination.
+    pub flow: Option<FlowKey>,
     /// Partie du nom d'utilisateur.
     pub user: Option<String>,
     /// Partie du nom d'hôte.
     pub host: Option<String>,
     /// Partie du message.
     pub text: Option<String>,
+}
+
+/// Flux réseau : adresses source et destination, port de destination.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FlowKey {
+    pub source_ip: String,
+    pub destination_ip: String,
+    pub destination_port: Option<u16>,
+}
+
+/// Dimension d'un regroupement d'événements.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GroupBy {
+    /// Adresse IP, en source ou en destination.
+    Ip,
+    User,
+    Host,
+    /// Source, destination et port de destination.
+    Flow,
+}
+
+/// Groupe d'événements partageant une même entité.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Group {
+    /// Entité (adresse, utilisateur, hôte) ; pour un flux, l'adresse source.
+    pub key: String,
+    /// Flux : adresse et port de destination.
+    pub destination_ip: Option<String>,
+    pub destination_port: Option<u16>,
+    pub events: u64,
+    pub failures: u64,
+    pub first_us: Option<i64>,
+    pub last_us: Option<i64>,
 }
 
 /// Critère sur l'heure d'un événement.
@@ -83,10 +119,32 @@ impl EventFilter {
             Some(TimeQuality::Missing) => add(" AND time_us IS NULL", vec![]),
             None => {}
         }
-        if let Some(ip) = self.ip.as_deref().filter(|s| !s.is_empty()) {
+        if let Some(ip) = self
+            .ip
+            .as_deref()
+            .and_then(|s| s.trim().parse::<std::net::IpAddr>().ok())
+        {
+            // Adresse complète : forme normalisée, comme en base.
+            let ip = ip.to_string();
+            add(
+                " AND (source_ip = ? OR destination_ip = ?)",
+                vec![text(&ip), text(&ip)],
+            );
+        } else if let Some(ip) = self.ip.as_deref().filter(|s| !s.is_empty()) {
             add(
                 " AND (instr(source_ip, ?) = 1 OR instr(destination_ip, ?) = 1)",
                 vec![text(ip), text(ip)],
+            );
+        }
+        if let Some(f) = &self.flow {
+            add(
+                " AND source_ip = ? AND destination_ip = ? AND destination_port IS ?",
+                vec![
+                    text(&f.source_ip),
+                    text(&f.destination_ip),
+                    f.destination_port
+                        .map_or(Value::Null, |p| Value::Integer(i64::from(p))),
+                ],
             );
         }
         if let Some(u) = self.user.as_deref().filter(|s| !s.is_empty()) {
@@ -479,6 +537,63 @@ impl Storage {
         )?)
     }
 
+    /// Événements retenus par `filter`, regroupés par entité ; les groupes
+    /// les plus fournis d'abord, au plus `limit`.
+    pub fn groups(
+        &self,
+        investigation_id: InvestigationId,
+        filter: &EventFilter,
+        by: GroupBy,
+        limit: u32,
+    ) -> Result<Vec<Group>> {
+        self.investigation(investigation_id)?;
+        let (clause, values) = filter.sql();
+        let stats =
+            "count(*), count(CASE WHEN outcome = 'failure' THEN 1 END), min(time_us), max(time_us)";
+        let base = format!("FROM events WHERE investigation_id = ?{clause}");
+        let sql = match by {
+            // Une adresse compte une fois par événement, qu'elle soit source ou destination.
+            GroupBy::Ip => format!(
+                "SELECT ip, NULL, NULL, {stats} FROM (
+                   SELECT id, source_ip AS ip, outcome, time_us {base} AND source_ip IS NOT NULL
+                   UNION
+                   SELECT id, destination_ip, outcome, time_us {base} AND destination_ip IS NOT NULL)
+                 GROUP BY ip"
+            ),
+            GroupBy::User => format!("SELECT user_name, NULL, NULL, {stats} {base} AND user_name IS NOT NULL GROUP BY user_name"),
+            GroupBy::Host => format!("SELECT host, NULL, NULL, {stats} {base} AND host IS NOT NULL GROUP BY host"),
+            GroupBy::Flow => format!(
+                "SELECT source_ip, destination_ip, destination_port, {stats} {base}
+                   AND source_ip IS NOT NULL AND destination_ip IS NOT NULL
+                 GROUP BY source_ip, destination_ip, destination_port"
+            ),
+        };
+        let repeat = if by == GroupBy::Ip { 2 } else { 1 };
+        let mut params = Vec::new();
+        for _ in 0..repeat {
+            params.push(Value::Integer(investigation_id.get()));
+            params.extend(values.iter().cloned());
+        }
+        params.push(Value::Integer(i64::from(limit.clamp(1, 1000))));
+        let mut stmt = self
+            .conn
+            .prepare(&format!("{sql} ORDER BY 4 DESC, 1 LIMIT ?"))?;
+        let rows = stmt.query_map(params_from_iter(params), |r| {
+            Ok(Group {
+                key: r.get(0)?,
+                destination_ip: r.get(1)?,
+                destination_port: r
+                    .get::<_, Option<i64>>(2)?
+                    .and_then(|p| u16::try_from(p).ok()),
+                events: u64::try_from(r.get::<_, i64>(3)?).unwrap_or(0),
+                failures: u64::try_from(r.get::<_, i64>(4)?).unwrap_or(0),
+                first_us: r.get(5)?,
+                last_us: r.get(6)?,
+            })
+        })?;
+        Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+    }
+
     /// Nombre d'événements d'une enquête retenus par `filter`.
     pub fn count_filtered(
         &self,
@@ -732,6 +847,82 @@ mod tests {
     }
 
     #[test]
+    fn regroupements_et_flux() {
+        let (mut db, inv, ev) = setup();
+        let mut batch: Vec<NewEvent> = (0..5).map(|i| event(ev, i, Some(i as i64 * 10))).collect();
+        for (i, (src, dst, port)) in [
+            ("10.0.0.1", "10.0.0.9", Some(22)),
+            ("10.0.0.1", "10.0.0.9", Some(22)),
+            ("10.0.0.1", "10.0.0.9", Some(80)),
+            ("10.0.0.2", "10.0.0.1", None),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            batch[i].source_ip = Some(src.parse().unwrap());
+            batch[i].destination_ip = Some(dst.parse().unwrap());
+            batch[i].destination_port = port;
+        }
+        batch[1].outcome = Some(Outcome::Failure);
+        batch[0].user = Some("root".into());
+        batch[1].user = Some("root".into());
+        db.insert_events(ev, &batch).unwrap();
+        let all = EventFilter::default();
+
+        let ips = db.groups(inv, &all, GroupBy::Ip, 10).unwrap();
+        let summary: Vec<(&str, u64, u64)> = ips
+            .iter()
+            .map(|g| (g.key.as_str(), g.events, g.failures))
+            .collect();
+        // 10.0.0.1 : 3 fois en source, 1 fois en destination.
+        assert_eq!(
+            summary,
+            vec![("10.0.0.1", 4, 1), ("10.0.0.9", 3, 1), ("10.0.0.2", 1, 0)]
+        );
+        assert_eq!((ips[0].first_us, ips[0].last_us), (Some(0), Some(30)));
+
+        let users = db.groups(inv, &all, GroupBy::User, 10).unwrap();
+        assert_eq!((users[0].key.as_str(), users[0].events), ("root", 2));
+
+        let flows = db.groups(inv, &all, GroupBy::Flow, 10).unwrap();
+        assert_eq!(flows.len(), 3);
+        assert_eq!(
+            (
+                flows[0].key.as_str(),
+                flows[0].destination_ip.as_deref(),
+                flows[0].destination_port,
+                flows[0].events
+            ),
+            ("10.0.0.1", Some("10.0.0.9"), Some(22), 2)
+        );
+        // Pivot sur un flux, y compris sans port.
+        let pivot = |port| EventFilter {
+            flow: Some(FlowKey {
+                source_ip: "10.0.0.1".into(),
+                destination_ip: "10.0.0.9".into(),
+                destination_port: port,
+            }),
+            ..Default::default()
+        };
+        assert_eq!(db.count_filtered(inv, &pivot(Some(22))).unwrap(), 2);
+        let no_port = EventFilter {
+            flow: Some(FlowKey {
+                source_ip: "10.0.0.2".into(),
+                destination_ip: "10.0.0.1".into(),
+                destination_port: None,
+            }),
+            ..Default::default()
+        };
+        assert_eq!(db.count_filtered(inv, &no_port).unwrap(), 1);
+        // Les regroupements respectent le filtre.
+        let failed = EventFilter {
+            outcome: Some(Outcome::Failure),
+            ..Default::default()
+        };
+        assert_eq!(db.groups(inv, &failed, GroupBy::Ip, 10).unwrap().len(), 2);
+    }
+
+    #[test]
     fn filtres_de_la_chronologie() {
         let (mut db, inv, ev) = setup();
         let mut batch: Vec<NewEvent> = (0..6).map(|i| event(ev, i, Some(i as i64 * 10))).collect();
@@ -764,6 +955,14 @@ mod tests {
                 ..Default::default()
             }),
             vec![1, 2, 3]
+        );
+        // Adresse complète : exacte (203.0.113.7 ne retient pas 203.0.113.70).
+        assert_eq!(
+            offsets(EventFilter {
+                ip: Some(" 203.0.113.7".into()),
+                ..Default::default()
+            }),
+            vec![1]
         );
         // Préfixe : « 203. » ne retient pas 10.203.0.1.
         assert_eq!(
