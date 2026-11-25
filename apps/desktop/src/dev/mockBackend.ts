@@ -15,6 +15,7 @@ import type {
   Settings,
   StorageInfo,
   EventFilter,
+  EventGroup,
   TimelineEvent,
 } from "../api";
 
@@ -195,7 +196,14 @@ function demoFiltered(args: Record<string, unknown>): TimelineEvent[] {
       (!f.outcome || e.outcome === f.outcome) &&
       (!f.time ||
         (f.time === "missing" ? e.timeUs === null : e.timeBasis === "assumed_utc" || e.timeBasis === "inferred_year")) &&
-      (!f.ip || !!e.sourceIp?.startsWith(f.ip) || !!e.destinationIp?.startsWith(f.ip)) &&
+      (!f.ip ||
+        (/^\d+\.\d+\.\d+\.\d+$/.test(f.ip)
+          ? e.sourceIp === f.ip || e.destinationIp === f.ip
+          : !!e.sourceIp?.startsWith(f.ip) || !!e.destinationIp?.startsWith(f.ip))) &&
+      (!f.flow ||
+        (e.sourceIp === f.flow.sourceIp &&
+          e.destinationIp === f.flow.destinationIp &&
+          e.destinationPort === f.flow.destinationPort)) &&
       (!f.user || !!e.user?.includes(f.user)) &&
       (!f.host || !!e.host?.includes(f.host)) &&
       (!f.text || e.message.toLowerCase().includes(f.text.toLowerCase())),
@@ -274,6 +282,27 @@ export async function mockInvoke<T>(command: string, args: Record<string, unknow
           errors: 3,
           firstErrors: [{ line: 57, byteOffset: 9120, message: "JSON invalide : EOF while parsing an object" }],
         } satisfies AnalysisReport;
+      }
+      case "event_groups": {
+        const groups = new Map<string, EventGroup>();
+        const add = (key: string, e: TimelineEvent, dst: string | null = null, port: number | null = null) => {
+          const id = `${key}|${dst}|${port}`;
+          const g = groups.get(id) ?? { key, destinationIp: dst, destinationPort: port, events: 0, failures: 0, firstUs: null, lastUs: null };
+          g.events++;
+          if (e.outcome === "failure") g.failures++;
+          if (e.timeUs !== null) {
+            g.firstUs = g.firstUs === null ? e.timeUs : Math.min(g.firstUs, e.timeUs);
+            g.lastUs = g.lastUs === null ? e.timeUs : Math.max(g.lastUs, e.timeUs);
+          }
+          groups.set(id, g);
+        };
+        for (const e of demoFiltered(args)) {
+          if (args.by === "ip") new Set([e.sourceIp, e.destinationIp].filter(Boolean) as string[]).forEach((ip) => add(ip, e));
+          if (args.by === "user" && e.user) add(e.user, e);
+          if (args.by === "host" && e.host) add(e.host, e);
+          if (args.by === "flow" && e.sourceIp && e.destinationIp) add(e.sourceIp, e, e.destinationIp, e.destinationPort);
+        }
+        return [...groups.values()].sort((a, b) => b.events - a.events).slice(0, args.limit as number);
       }
       case "events_count":
         return demoFiltered(args).length;

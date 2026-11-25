@@ -299,12 +299,33 @@ export interface EventFilter {
   outcome?: "success" | "failure";
   /** Heure incertaine (fuseau supposé, année déduite) ou absente. */
   time?: "uncertain" | "missing";
-  /** Début d'adresse, en source ou en destination. */
+  /** Adresse en source ou en destination : exacte si complète, sinon début d'adresse. */
   ip?: string;
+  /** Flux réseau exact. */
+  flow?: { sourceIp: string; destinationIp: string; destinationPort: number | null };
   user?: string;
   host?: string;
   /** Partie du message (sans casse). */
   text?: string;
+}
+
+export type GroupBy = "ip" | "user" | "host" | "flow";
+
+/** Miroir de `GroupDto` : événements partageant une entité. Heures en µs UTC. */
+export interface EventGroup {
+  /** Adresse, utilisateur ou hôte ; pour un flux, l'adresse source. */
+  key: string;
+  destinationIp: string | null;
+  destinationPort: number | null;
+  events: number;
+  failures: number;
+  firstUs: number | null;
+  lastUs: number | null;
+}
+
+/** Événements retenus par le filtre, regroupés par entité (les plus fournis d'abord). */
+export function eventGroups(investigationId: number, filter: EventFilter, by: GroupBy, limit: number): Promise<EventGroup[]> {
+  return call("event_groups", { investigationId, filter, by, limit });
 }
 
 /** Nombre d'événements retenus par le filtre. */

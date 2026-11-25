@@ -3,7 +3,7 @@
 use crate::error::CommandError;
 use crate::state::AppState;
 use evidentyx_core::{Event, EvidenceId, InvestigationId};
-use evidentyx_storage::{EventFilter, TimeQuality};
+use evidentyx_storage::{EventFilter, FlowKey, GroupBy, TimeQuality};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -76,9 +76,32 @@ pub struct FilterDto {
     /// "uncertain" ou "missing".
     pub time: Option<String>,
     pub ip: Option<String>,
+    pub flow: Option<FlowDto>,
     pub user: Option<String>,
     pub host: Option<String>,
     pub text: Option<String>,
+}
+
+/// Flux réseau exact (pivot depuis un regroupement).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct FlowDto {
+    pub source_ip: String,
+    pub destination_ip: String,
+    pub destination_port: Option<u16>,
+}
+
+/// Miroir TypeScript : `EventGroup` dans `apps/desktop/src/api.ts`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GroupDto {
+    pub key: String,
+    pub destination_ip: Option<String>,
+    pub destination_port: Option<u16>,
+    pub events: u64,
+    pub failures: u64,
+    pub first_us: Option<i64>,
+    pub last_us: Option<i64>,
 }
 
 impl TryFrom<FilterDto> for EventFilter {
@@ -110,6 +133,11 @@ impl TryFrom<FilterDto> for EventFilter {
                 .transpose()
                 .map_err(CommandError::from)?,
             ip: f.ip,
+            flow: f.flow.map(|f| FlowKey {
+                source_ip: f.source_ip,
+                destination_ip: f.destination_ip,
+                destination_port: f.destination_port,
+            }),
             user: f.user,
             host: f.host,
             text: f.text,
@@ -147,6 +175,45 @@ pub fn events_window(
         .into_iter()
         .map(Into::into)
         .collect())
+    })
+}
+
+/// Regroupements : `by` vaut "ip", "user", "host" ou "flow".
+#[tauri::command(async)]
+pub fn event_groups(
+    state: tauri::State<'_, AppState>,
+    investigation_id: i64,
+    filter: FilterDto,
+    by: String,
+    limit: u32,
+) -> Result<Vec<GroupDto>, CommandError> {
+    let filter = EventFilter::try_from(filter)?;
+    let by = match by.as_str() {
+        "ip" => GroupBy::Ip,
+        "user" => GroupBy::User,
+        "host" => GroupBy::Host,
+        "flow" => GroupBy::Flow,
+        other => {
+            return Err(CommandError::invalid_argument(format!(
+                "Regroupement inconnu : « {other} »"
+            )))
+        }
+    };
+    state.with_storage(|s| {
+        Ok(
+            s.groups(InvestigationId::new(investigation_id), &filter, by, limit)?
+                .into_iter()
+                .map(|g| GroupDto {
+                    key: g.key,
+                    destination_ip: g.destination_ip,
+                    destination_port: g.destination_port,
+                    events: g.events,
+                    failures: g.failures,
+                    first_us: g.first_us,
+                    last_us: g.last_us,
+                })
+                .collect(),
+        )
     })
 }
 

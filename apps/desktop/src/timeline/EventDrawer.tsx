@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { CircleAlert, CircleCheck, Copy, Info, X } from "lucide-react";
+import { CircleAlert, CircleCheck, Copy, Filter, Info, Waypoints, X } from "lucide-react";
 import type { TimelineEvent } from "../api";
+import type { Pivot } from "./GroupsView";
 import { IconButton, useToast } from "../components/ui";
 import { BASIS_LABELS, PRECISION_LABELS, endpoint, eventTimeFull, isUncertain, kindLabel } from "./eventFormat";
 
@@ -15,12 +16,15 @@ export function EventDrawer({
   event: e,
   evidenceName,
   utc,
+  onPivot,
   onClose,
 }: {
   event: TimelineEvent;
   evidenceName: string;
   /** Heures affichées en UTC (sinon : heure locale). */
   utc: boolean;
+  /** Affiche la chronologie de l'entité choisie. */
+  onPivot: (p: Pivot) => void;
   onClose: () => void;
 }) {
   const { notify } = useToast();
@@ -39,14 +43,16 @@ export function EventDrawer({
 
   const tone = e.outcome === "failure" ? "danger" : e.outcome === "success" ? "success" : "accent";
   const Icon = e.outcome === "failure" ? CircleAlert : e.outcome === "success" ? CircleCheck : Info;
-  const rows: Array<[string, string | null]> = [
+  const pivotOn = (kind: "ip" | "user" | "host", value: string | null): Pivot | undefined =>
+    value ? { kind, value } : undefined;
+  const rows: Array<[string, string | null, (Pivot | undefined)?]> = [
     ["Catégorie", kindLabel(e.kind)],
     ["Action", e.action],
     ["Issue", e.outcome === "failure" ? "Échec" : e.outcome === "success" ? "Réussite" : null],
-    ["Source", endpoint(e.sourceIp, e.sourcePort)],
-    ["Destination", endpoint(e.destinationIp, e.destinationPort)],
-    ["Utilisateur", e.user],
-    ["Hôte", e.host],
+    ["Source", endpoint(e.sourceIp, e.sourcePort), pivotOn("ip", e.sourceIp)],
+    ["Destination", endpoint(e.destinationIp, e.destinationPort), pivotOn("ip", e.destinationIp)],
+    ["Utilisateur", e.user, pivotOn("user", e.user)],
+    ["Hôte", e.host, pivotOn("host", e.host)],
     ["Précision", e.timePrecision ? (PRECISION_LABELS[e.timePrecision] ?? e.timePrecision) : null],
     ["Origine de l'heure", e.timeBasis ? (BASIS_LABELS[e.timeBasis] ?? e.timeBasis) : null],
   ];
@@ -105,14 +111,43 @@ export function EventDrawer({
         {tab === "info" && (
           <dl className="event-drawer__facts">
             {rows
-              .filter((r): r is [string, string] => r[1] !== null)
-              .map(([k, v]) => (
+              .filter((r): r is [string, string, (Pivot | undefined)?] => r[1] !== null)
+              .map(([k, v, p]) => (
                 <div key={k}>
                   <dt>{k}</dt>
-                  <dd className={k === "Source" || k === "Destination" ? "mono" : undefined}>{v}</dd>
+                  <dd className={k === "Source" || k === "Destination" ? "mono" : undefined}>
+                    {p ? (
+                      <button
+                        type="button"
+                        className="event-drawer__pivot"
+                        title="Afficher tous les événements de cette entité"
+                        onClick={() => onPivot(p)}
+                      >
+                        {v} <Filter size={12} aria-hidden="true" />
+                      </button>
+                    ) : (
+                      v
+                    )}
+                  </dd>
                 </div>
               ))}
           </dl>
+        )}
+        {tab === "info" && e.sourceIp && e.destinationIp && (
+          <button
+            type="button"
+            className="event-drawer__copy event-drawer__flow"
+            onClick={() =>
+              onPivot({
+                kind: "flow",
+                sourceIp: e.sourceIp!,
+                destinationIp: e.destinationIp!,
+                destinationPort: e.destinationPort,
+              })
+            }
+          >
+            <Waypoints size={14} aria-hidden="true" /> Événements du même flux
+          </button>
         )}
 
         {tab === "attributes" &&
