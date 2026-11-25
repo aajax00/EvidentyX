@@ -5,7 +5,17 @@
 // Les règles reproduites ici sont volontairement minimales : la référence est
 // le moteur Rust (evidentyx-core, evidentyx-storage). Exclu de la version publiée.
 
-import type { AnalysisReport, Evidence, Investigation, InvestigationQuery, Overview, ProgressHandler, Settings, StorageInfo } from "../api";
+import type {
+  AnalysisReport,
+  Evidence,
+  Investigation,
+  InvestigationQuery,
+  Overview,
+  ProgressHandler,
+  Settings,
+  StorageInfo,
+  TimelineEvent,
+} from "../api";
 
 const DAY = 86_400_000;
 const now = Date.now();
@@ -132,6 +142,45 @@ async function simulateTask(args: Record<string, unknown>, total: number, cancel
   }
 }
 
+/** Événements de démonstration : connexions SSH simulées, sans rapport avec un vrai fichier. */
+function demoEvents(investigationId: number): TimelineEvent[] {
+  const list = evidence.filter((e) => e.investigationId === investigationId && e.eventCount > 0);
+  const out: TimelineEvent[] = [];
+  const t0 = (Date.now() - 2 * DAY) * 1000;
+  const users = ["root", "admin", "deploy", "www-data"];
+  for (const ev of list) {
+    for (let i = 0; i < ev.eventCount; i++) {
+      const ip = `203.0.113.${(i * 7) % 23}`;
+      const ok = i % 5 === 0;
+      const user = users[i % users.length]!;
+      out.push({
+        id: ev.id * 100_000 + i,
+        evidenceId: ev.id,
+        byteOffset: i * 96,
+        line: i + 1,
+        record: null,
+        timeUs: t0 + i * 432_000_000,
+        timePrecision: "second",
+        timeBasis: "explicit",
+        kind: "authentication",
+        host: "srv-web-01",
+        sourceIp: ip,
+        sourcePort: 40000 + i,
+        destinationIp: "10.0.0.5",
+        destinationPort: 22,
+        user,
+        action: "ssh-login",
+        outcome: ok ? "success" : "failure",
+        message: `${ok ? "Accepted" : "Failed"} password for ${user} from ${ip}`,
+        raw: `{"ts":"…","user":"${user}","src":"${ip}","status":"${ok ? "ok" : "failed"}"}`,
+        rawTruncated: false,
+        attributes: { process: "sshd", pid: String(1000 + i) },
+      });
+    }
+  }
+  return out;
+}
+
 export async function mockInvoke<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {
   await new Promise((r) => setTimeout(r, 80));
   if (command === "cancel_task") {
@@ -204,6 +253,10 @@ export async function mockInvoke<T>(command: string, args: Record<string, unknow
           errors: 3,
           firstErrors: [{ line: 57, byteOffset: 9120, message: "JSON invalide : EOF while parsing an object" }],
         } satisfies AnalysisReport;
+      }
+      case "events_window": {
+        const offset = args.offset as number;
+        return demoEvents(args.investigationId as number).slice(offset, offset + (args.limit as number));
       }
       case "investigation_overview": {
         find(args.investigationId);

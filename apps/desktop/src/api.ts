@@ -260,6 +260,41 @@ export interface Overview {
   sources: Array<{ evidenceId: number; fileName: string; events: number }>;
 }
 
+// ——— Chronologie ———
+
+/** Miroir de `EventDto` (src-tauri/src/timeline.rs). Heure en µs Unix UTC. */
+export interface TimelineEvent {
+  id: number;
+  evidenceId: number;
+  byteOffset: number;
+  line: number | null;
+  record: number | null;
+  timeUs: number | null;
+  timePrecision: "day" | "second" | "millisecond" | "microsecond" | null;
+  timeBasis: "explicit" | "assumed_utc" | "inferred_year" | null;
+  kind: string;
+  host: string | null;
+  sourceIp: string | null;
+  sourcePort: number | null;
+  destinationIp: string | null;
+  destinationPort: number | null;
+  user: string | null;
+  action: string | null;
+  outcome: "success" | "failure" | null;
+  message: string;
+  raw: string;
+  rawTruncated: boolean;
+  attributes: Record<string, string>;
+}
+
+/**
+ * Événements à partir de la position `offset` de la chronologie (ordre
+ * chronologique, événements sans heure à la fin).
+ */
+export function eventsWindow(investigationId: number, offset: number, limit: number): Promise<TimelineEvent[]> {
+  return call("events_window", { investigationId, offset, limit });
+}
+
 export function getOverview(investigationId: number): Promise<Overview> {
   return call("investigation_overview", { investigationId });
 }

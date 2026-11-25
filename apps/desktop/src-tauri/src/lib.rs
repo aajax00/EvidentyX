@@ -12,6 +12,7 @@ mod overview;
 mod settings;
 mod state;
 mod tasks;
+mod timeline;
 
 use serde::Serialize;
 use state::AppState;
@@ -74,6 +75,7 @@ pub fn run() {
             evidence::remove_evidence,
             analysis::analyze_evidence,
             tasks::cancel_task,
+            timeline::events_window,
             overview::investigation_overview,
         ])
         .run(tauri::generate_context!())

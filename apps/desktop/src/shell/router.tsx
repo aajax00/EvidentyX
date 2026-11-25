@@ -6,6 +6,7 @@ export type Route =
   | { page: "home" }
   | { page: "investigations" }
   | { page: "investigation"; id: number }
+  | { page: "timeline"; id: number }
   | { page: "settings" }
   | { page: "about" };
 
@@ -30,7 +31,7 @@ export function useRouter(): RouterApi {
   return api;
 }
 
-/** Page de la barre latérale à surligner pour une route (le détail d'une enquête relève de « Enquêtes »). */
-export function sectionOf(route: Route): Exclude<PageId, "investigation"> {
-  return route.page === "investigation" ? "investigations" : route.page;
+/** Page de la barre latérale à surligner pour une route (une enquête et sa chronologie relèvent de « Enquêtes »). */
+export function sectionOf(route: Route): Exclude<PageId, "investigation" | "timeline"> {
+  return route.page === "investigation" || route.page === "timeline" ? "investigations" : route.page;
 }

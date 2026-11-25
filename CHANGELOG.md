@@ -6,6 +6,10 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ## [Non publié]
 
+### Ajouté
+
+- Chronologie d'une enquête (bouton « Chronologie ») : tous les événements dans l'ordre chronologique, sans heure à la fin ; liste virtualisée qui reste fluide sur des millions d'événements (seules les lignes visibles sont chargées) ; détail d'un événement (champs normalisés, attributs d'origine, texte brut, preuve, ligne et octet) ; commande `events_window`.
+
 ## [0.2.0] - 2026-11-25
 
 Fin de la phase 2 (Ingestion) : les preuves s'ajoutent à une enquête, leur intégrité est vérifiée et leurs événements sont extraits.

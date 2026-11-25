@@ -17,7 +17,7 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
   const { route, navigate } = useRouter();
   const { all } = useInvestigations();
   const current = sectionOf(route);
-  const openId = route.page === "investigation" ? route.id : null;
+  const openId = route.page === "investigation" || route.page === "timeline" ? route.id : null;
   const recent = all.filter((i) => i.status === "active").slice(0, RECENT_COUNT);
 
   return (

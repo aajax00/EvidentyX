@@ -12,8 +12,8 @@ export function Header({ onOpenPalette }: HeaderProps) {
   const { route, navigate } = useRouter();
   const { all } = useInvestigations();
   const section = sectionOf(route);
-  const openName =
-    route.page === "investigation" ? (all.find((i) => i.id === route.id)?.name ?? `Enquête #${route.id}`) : null;
+  const openId = route.page === "investigation" || route.page === "timeline" ? route.id : null;
+  const openName = openId === null ? null : (all.find((i) => i.id === openId)?.name ?? `Enquête #${openId}`);
 
   return (
     <header className="shell-header">
@@ -24,9 +24,25 @@ export function Header({ onOpenPalette }: HeaderProps) {
               {SECTION_TITLES[section]}
             </button>
             <ChevronRight size={14} aria-hidden="true" className="shell-breadcrumb__sep" />
-            <h1 className="shell-breadcrumb__current" aria-current="page">
-              {openName}
-            </h1>
+            {route.page === "timeline" ? (
+              <>
+                <button
+                  type="button"
+                  className="shell-breadcrumb__link"
+                  onClick={() => navigate({ page: "investigation", id: route.id })}
+                >
+                  {openName}
+                </button>
+                <ChevronRight size={14} aria-hidden="true" className="shell-breadcrumb__sep" />
+                <h1 className="shell-breadcrumb__current" aria-current="page">
+                  Chronologie
+                </h1>
+              </>
+            ) : (
+              <h1 className="shell-breadcrumb__current" aria-current="page">
+                {openName}
+              </h1>
+            )}
           </>
         ) : (
           <h1 className="shell-breadcrumb__current">{SECTION_TITLES[section]}</h1>
