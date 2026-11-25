@@ -94,6 +94,7 @@ function ReportDialog({ fileName, report: r, onClose }: { fileName: string; repo
   ];
   return (
     <Dialog
+      icon={ScanSearch}
       title="Rapport d'analyse"
       description={`« ${fileName} »`}
       onClose={onClose}
@@ -438,6 +439,8 @@ export function EvidencePanel({
       {toRemove && (
         <Dialog
           width="sm"
+          tone="danger"
+          icon={Trash2}
           title="Retirer la preuve ?"
           onClose={() => {
             if (!removing) setToRemove(null);

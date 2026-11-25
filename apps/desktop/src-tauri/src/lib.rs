@@ -76,6 +76,8 @@ pub fn run() {
             tasks::cancel_task,
             overview::investigation_overview,
             overview::totals,
+            overview::list_events,
+            overview::entity_links,
         ])
         .run(tauri::generate_context!())
         .expect("échec du démarrage de l'application EVIDENTYX");

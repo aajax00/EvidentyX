@@ -1,4 +1,5 @@
 import { useId, useState, type FormEvent } from "react";
+import { FolderPlus, Pencil } from "lucide-react";
 import { toCommandError, type CommandError, type Investigation } from "../api";
 import { Button, Dialog, TextAreaField, TextField } from "../components/ui";
 
@@ -39,6 +40,7 @@ export function InvestigationFormDialog({ mode, onSubmit, onClose }: Investigati
 
   return (
     <Dialog
+      icon={creating ? FolderPlus : Pencil}
       title={creating ? "Nouvelle enquête" : "Renommer l'enquête"}
       description={
         creating ? "Une enquête regroupe les preuves et l'analyse d'un incident." : `Nom actuel : ${mode.investigation.name}`

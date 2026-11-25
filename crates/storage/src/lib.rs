@@ -17,7 +17,7 @@ mod settings;
 
 pub use clock::{Clock, SystemClock};
 pub use error::{Result, StorageError};
-pub use events::{EventPage, InsertReport, Overview, Totals};
+pub use events::{EntityLink, EventPage, InsertReport, Overview, Totals};
 pub use evidence::NewEvidence;
 pub use migrations::LATEST_SCHEMA_VERSION;
 

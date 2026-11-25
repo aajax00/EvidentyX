@@ -272,6 +272,57 @@ export function getTotals(): Promise<Totals> {
   return call("totals");
 }
 
+/** Miroir de `EventDto` (src-tauri/src/overview.rs). Heure en µs Unix UTC. */
+export interface TimelineEvent {
+  id: number;
+  evidenceId: number;
+  byteOffset: number;
+  line: number | null;
+  record: number | null;
+  timeUs: number | null;
+  timePrecision: "day" | "second" | "millisecond" | "microsecond" | null;
+  timeBasis: "explicit" | "assumed_utc" | "inferred_year" | null;
+  kind: string;
+  host: string | null;
+  sourceIp: string | null;
+  sourcePort: number | null;
+  destinationIp: string | null;
+  destinationPort: number | null;
+  user: string | null;
+  action: string | null;
+  outcome: "success" | "failure" | null;
+  message: string;
+  raw: string;
+  rawTruncated: boolean;
+  attributes: Record<string, string>;
+}
+
+export interface EventPage {
+  events: TimelineEvent[];
+  /** Curseur de la page suivante ; `null` en fin de chronologie. */
+  next: number | null;
+}
+
+/** Chronologie d'une enquête : ordre chronologique, événements sans heure à la fin. */
+export function listEvents(investigationId: number, after: number | null, limit: number): Promise<EventPage> {
+  return call("list_events", { investigationId, after, limit });
+}
+
+export type EntityKind = "ip" | "user" | "host";
+
+/** Miroir de `EntityLinkDto` : lien observé entre deux entités. */
+export interface EntityLink {
+  fromKind: EntityKind;
+  from: string;
+  toKind: EntityKind;
+  to: string;
+  events: number;
+}
+
+export function getEntityLinks(investigationId: number, limit: number): Promise<EntityLink[]> {
+  return call("entity_links", { investigationId, limit });
+}
+
 export function getOverview(investigationId: number): Promise<Overview> {
   return call("investigation_overview", { investigationId });
 }

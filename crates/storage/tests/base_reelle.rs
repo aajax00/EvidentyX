@@ -52,5 +52,20 @@ fn vue_d_ensemble() {
             o.by_kind,
             t.elapsed()
         );
+        let t = Instant::now();
+        let page = db.list_events(inv.id, None, 100).unwrap();
+        println!(
+            "  chronologie, première page : {} en {:.2?}",
+            page.events.len(),
+            t.elapsed()
+        );
+        if let Some(next) = page.next {
+            let t = Instant::now();
+            db.list_events(inv.id, Some(next), 100).unwrap();
+            println!("  page suivante en {:.2?}", t.elapsed());
+        }
+        let t = Instant::now();
+        let links = db.entity_links(inv.id, 60).unwrap();
+        println!("  liens : {} en {:.2?}", links.len(), t.elapsed());
     }
 }

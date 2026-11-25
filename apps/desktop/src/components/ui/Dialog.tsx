@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
-import { X } from "lucide-react";
+import { X, type LucideIcon } from "lucide-react";
 import { IconButton } from "./Button";
 import "./dialog.css";
 
@@ -11,6 +11,10 @@ export interface DialogProps {
   /** Boutons d'action, alignés à droite. */
   footer?: ReactNode;
   width?: "sm" | "md";
+  /** Icône de l'en-tête (tuile teintée). */
+  icon?: LucideIcon;
+  /** `danger` : action destructrice (liseré et icône rouges). */
+  tone?: "default" | "danger";
   children?: ReactNode;
 }
 
@@ -19,7 +23,7 @@ export interface DialogProps {
  * piège à focus, fermeture par Échap et retour du focus fournis par le navigateur.
  * Le composant est monté quand la boîte est ouverte, démonté à la fermeture.
  */
-export function Dialog({ title, description, onClose, footer, width = "md", children }: DialogProps) {
+export function Dialog({ title, description, onClose, footer, width = "md", icon: Icon, tone = "default", children }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const descriptionId = useId();
@@ -46,7 +50,7 @@ export function Dialog({ title, description, onClose, footer, width = "md", chil
   return (
     <dialog
       ref={ref}
-      className={`ui-dialog ui-dialog--${width}`}
+      className={`ui-dialog ui-dialog--${width} ui-dialog--${tone}`}
       aria-labelledby={titleId}
       aria-describedby={description ? descriptionId : undefined}
       onMouseDown={(e) => {
@@ -56,16 +60,23 @@ export function Dialog({ title, description, onClose, footer, width = "md", chil
     >
       <div className="ui-dialog__surface">
         <header className="ui-dialog__header">
-          <h2 id={titleId} className="ui-dialog__title">
-            {title}
-          </h2>
+          {Icon && (
+            <span className="ui-dialog__icon" aria-hidden="true">
+              <Icon size={20} />
+            </span>
+          )}
+          <div className="ui-dialog__heading">
+            <h2 id={titleId} className="ui-dialog__title">
+              {title}
+            </h2>
+            {description && (
+              <p id={descriptionId} className="ui-dialog__description">
+                {description}
+              </p>
+            )}
+          </div>
           <IconButton icon={X} label="Fermer" onClick={onClose} />
         </header>
-        {description && (
-          <p id={descriptionId} className="ui-dialog__description">
-            {description}
-          </p>
-        )}
         {children && <div className="ui-dialog__body">{children}</div>}
         {footer && <footer className="ui-dialog__footer">{footer}</footer>}
       </div>

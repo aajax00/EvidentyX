@@ -28,6 +28,8 @@ export function DeleteDialog({ investigation, onConfirm, onClose }: DeleteDialog
   return (
     <Dialog
       width="sm"
+      tone="danger"
+      icon={Trash2}
       title="Supprimer l'enquête ?"
       onClose={onClose}
       footer={

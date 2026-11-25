@@ -1,21 +1,15 @@
 import { useEffect, useState } from "react";
 import { Activity, BarChart3, FileStack, Globe, Users } from "lucide-react";
-import { getOverview, toCommandError, type Overview } from "../api";
-import { EmptyState, Panel, Spinner } from "../components/ui";
+import { getOverview, toCommandError, type Overview, type TimelineEvent } from "../api";
+import { EmptyState, Panel, SegmentedControl, Spinner } from "../components/ui";
+import { EntityGraph } from "./EntityGraph";
+import { EventDrawer } from "./EventDrawer";
+import { kindLabel } from "./eventFormat";
+import { Timeline } from "./Timeline";
 import { formatDateTime } from "../format";
 import "./overview.css";
 
 const number = new Intl.NumberFormat("fr-FR");
-
-const KIND_LABELS: Record<string, string> = {
-  authentication: "Authentification",
-  network: "Réseau",
-  web: "Web",
-  process: "Processus",
-  file: "Fichier",
-  system: "Système",
-  other: "Autre",
-};
 
 function plural(n: number, word: string) {
   return `${number.format(n)} ${word}${n > 1 ? "s" : ""}`;
@@ -48,6 +42,8 @@ function Bars({ items }: { items: Array<{ key: string; label: string; value: num
 export function OverviewPanel({ investigationId, version }: { investigationId: number; version: number }) {
   const [data, setData] = useState<Overview | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<"activity" | "graph">("activity");
+  const [selected, setSelected] = useState<TimelineEvent | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -108,10 +104,10 @@ export function OverviewPanel({ investigationId, version }: { investigationId: n
   ] as const;
 
   return (
-    <Panel title="Vue d'ensemble">
-      <div className="kpi-grid overview-kpis">
+    <>
+      <div className="kpi-grid" role="list" aria-label="Chiffres clés de l'enquête">
         {kpis.map((k) => (
-          <div key={k.label} className={`kpi kpi--${k.tone}`}>
+          <div key={k.label} className={`kpi kpi--${k.tone}`} role="listitem">
             <span className="kpi__icon" aria-hidden="true">
               <k.icon size={20} />
             </span>
@@ -124,41 +120,76 @@ export function OverviewPanel({ investigationId, version }: { investigationId: n
         ))}
       </div>
 
-      <div className="overview-grid">
-        <section className="overview-block" aria-labelledby="overview-activity">
-          <h3 id="overview-activity" className="overview-block__title">
-            Activité dans le temps
-          </h3>
-          {first === null || last === null ? (
-            <p className="text-muted">Aucun événement daté.</p>
-          ) : (
-            <AreaChart values={data.histogram} label={(i) => formatDateTime(bucketStart(i))} first={first} last={last} />
-          )}
-          <p className="overview-note">
-            {first !== null && last !== null && `Du ${formatDateTime(first)} au ${formatDateTime(last)} (heure locale)`}
-            {untimed > 0 && ` · ${plural(untimed, "événement")} sans heure`}
-            {data.hosts > 0 && ` · ${plural(data.hosts, "hôte")}`}
-          </p>
-        </section>
-
-        <section className="overview-block" aria-labelledby="overview-kinds">
-          <h3 id="overview-kinds" className="overview-block__title">
-            Catégories
-          </h3>
-          <Donut
-            total={data.events}
-            items={data.byKind.map((k) => ({ key: k.kind, label: KIND_LABELS[k.kind] ?? k.kind, value: k.events }))}
+      <Panel
+        title="Vue d'ensemble de l'enquête"
+        actions={
+          <SegmentedControl
+            label="Affichage"
+            value={view}
+            onChange={setView}
+            options={[
+              { value: "activity", label: "Activité" },
+              { value: "graph", label: "Graphe" },
+            ]}
           />
+        }
+      >
+        <div className="overview-main">
+          <section className="overview-block" aria-label={view === "activity" ? "Activité dans le temps" : "Graphe des entités"}>
+            {view === "graph" ? (
+              <EntityGraph investigationId={investigationId} version={version} />
+            ) : first === null || last === null ? (
+              <p className="text-muted">Aucun événement daté.</p>
+            ) : (
+              <AreaChart values={data.histogram} label={(i) => formatDateTime(bucketStart(i))} first={first} last={last} />
+            )}
+            {view === "activity" && (
+              <p className="overview-note">
+                {first !== null && last !== null && `Du ${formatDateTime(first)} au ${formatDateTime(last)} (heure locale)`}
+                {untimed > 0 && ` · ${plural(untimed, "événement")} sans heure`}
+                {data.hosts > 0 && ` · ${plural(data.hosts, "hôte")}`}
+              </p>
+            )}
+          </section>
 
-          <h3 className="overview-block__title overview-block__title--spaced">Principales sources</h3>
+          <section className="overview-timeline" aria-labelledby="overview-timeline">
+            <h3 id="overview-timeline" className="overview-block__title">
+              Chronologie des événements
+            </h3>
+            <Timeline
+              investigationId={investigationId}
+              version={version}
+              selectedId={selected?.id ?? null}
+              onSelect={setSelected}
+            />
+          </section>
+        </div>
+      </Panel>
+
+      <div className="overview-pair">
+        <Panel title="Principales sources">
           <Bars
             items={data.sources
               .slice(0, 6)
               .map((s) => ({ key: String(s.evidenceId), label: s.fileName, value: s.events }))}
           />
-        </section>
+        </Panel>
+        <Panel title="Catégories">
+          <Donut
+            total={data.events}
+            items={data.byKind.map((k) => ({ key: k.kind, label: kindLabel(k.kind), value: k.events }))}
+          />
+        </Panel>
       </div>
-    </Panel>
+
+      {selected && (
+        <EventDrawer
+          event={selected}
+          evidenceName={data.sources.find((s) => s.evidenceId === selected.evidenceId)?.fileName ?? `preuve n° ${selected.evidenceId}`}
+          onClose={() => setSelected(null)}
+        />
+      )}
+    </>
   );
 }
 

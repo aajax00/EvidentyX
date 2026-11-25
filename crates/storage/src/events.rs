@@ -18,6 +18,17 @@ pub struct InsertReport {
     pub duplicates: u64,
 }
 
+/// Lien observé entre deux entités, avec son nombre d'événements.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EntityLink {
+    /// `ip`, `user` ou `host`.
+    pub from_kind: &'static str,
+    pub from: String,
+    pub to_kind: &'static str,
+    pub to: String,
+    pub events: u64,
+}
+
 /// Totaux de toutes les enquêtes (tableau de bord).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Totals {
@@ -277,6 +288,56 @@ impl Storage {
             counts.insert(EvidenceId::new(id), u64::try_from(n).unwrap_or(0));
         }
         Ok(counts)
+    }
+
+    /// Liens les plus fréquents d'une enquête : adresse source → destination,
+    /// utilisateur → adresse source, adresse source → hôte journalisant.
+    pub fn entity_links(
+        &self,
+        investigation_id: InvestigationId,
+        limit: u32,
+    ) -> Result<Vec<EntityLink>> {
+        self.investigation(investigation_id)?;
+        let mut stmt = self.conn.prepare(
+            "SELECT * FROM (
+               SELECT 0, source_ip, destination_ip, count(*) FROM events
+                WHERE investigation_id = ?1 AND source_ip IS NOT NULL AND destination_ip IS NOT NULL
+                GROUP BY source_ip, destination_ip
+               UNION ALL
+               SELECT 1, user_name, source_ip, count(*) FROM events
+                WHERE investigation_id = ?1 AND user_name IS NOT NULL AND source_ip IS NOT NULL
+                GROUP BY user_name, source_ip
+               UNION ALL
+               SELECT 2, source_ip, host, count(*) FROM events
+                WHERE investigation_id = ?1 AND source_ip IS NOT NULL AND host IS NOT NULL
+                GROUP BY source_ip, host)
+             ORDER BY 4 DESC, 1, 2, 3 LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![investigation_id.get(), limit.clamp(1, 500)], |r| {
+            Ok((
+                r.get::<_, i64>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, String>(2)?,
+                r.get::<_, i64>(3)?,
+            ))
+        })?;
+        let mut links = Vec::new();
+        for row in rows {
+            let (k, from, to, n) = row?;
+            let (from_kind, to_kind) = match k {
+                0 => ("ip", "ip"),
+                1 => ("user", "ip"),
+                _ => ("ip", "host"),
+            };
+            links.push(EntityLink {
+                from_kind,
+                from,
+                to_kind,
+                to,
+                events: u64::try_from(n).unwrap_or(0),
+            });
+        }
+        Ok(links)
     }
 
     /// Totaux de toutes les enquêtes.
@@ -550,6 +611,12 @@ mod tests {
             vec![(EventKind::Authentication, 8), (EventKind::Network, 1)]
         );
         assert_eq!((o.ips, o.users, o.hosts), (2, 1, 1));
+
+        let links = db.entity_links(inv, 10).unwrap();
+        assert_eq!(links.len(), 1);
+        assert!(links
+            .iter()
+            .any(|l| l.from == "10.0.0.2" && l.to == "10.0.0.1" && l.from_kind == "ip"));
 
         // Une seule heure : tout dans le premier intervalle.
         let (mut db, inv, ev) = setup();
