@@ -77,6 +77,17 @@ pub struct Group {
     pub last_us: Option<i64>,
 }
 
+/// Lien observé entre deux entités, avec son nombre d'événements.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EntityLink {
+    /// `ip`, `user` ou `host`.
+    pub from_kind: &'static str,
+    pub from: String,
+    pub to_kind: &'static str,
+    pub to: String,
+    pub events: u64,
+}
+
 /// Critère sur l'heure d'un événement.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TimeQuality {
@@ -594,6 +605,64 @@ impl Storage {
         Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
     }
 
+    /// Liens les plus fréquents entre entités, parmi les événements retenus
+    /// par `filter` : adresse source → destination, utilisateur → adresse
+    /// source, adresse source → hôte. Un relevé, pas une corrélation déduite.
+    pub fn entity_links(
+        &self,
+        investigation_id: InvestigationId,
+        filter: &EventFilter,
+        limit: u32,
+    ) -> Result<Vec<EntityLink>> {
+        self.investigation(investigation_id)?;
+        let (clause, values) = filter.sql();
+        let part = |kind: i64, a: &str, b: &str| {
+            format!(
+                "SELECT {kind}, {a}, {b}, count(*) FROM events
+                  WHERE investigation_id = ?{clause} AND {a} IS NOT NULL AND {b} IS NOT NULL
+                  GROUP BY {a}, {b}"
+            )
+        };
+        let sql = format!(
+            "SELECT * FROM ({} UNION ALL {} UNION ALL {}) ORDER BY 4 DESC, 1, 2, 3 LIMIT ?",
+            part(0, "source_ip", "destination_ip"),
+            part(1, "user_name", "source_ip"),
+            part(2, "source_ip", "host"),
+        );
+        let mut params = Vec::new();
+        for _ in 0..3 {
+            params.push(Value::Integer(investigation_id.get()));
+            params.extend(values.iter().cloned());
+        }
+        params.push(Value::Integer(i64::from(limit.clamp(1, 500))));
+        let mut stmt = self.conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_from_iter(params), |r| {
+            Ok((
+                r.get::<_, i64>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, String>(2)?,
+                r.get::<_, i64>(3)?,
+            ))
+        })?;
+        let mut links = Vec::new();
+        for row in rows {
+            let (k, from, to, n) = row?;
+            let (from_kind, to_kind) = match k {
+                0 => ("ip", "ip"),
+                1 => ("user", "ip"),
+                _ => ("ip", "host"),
+            };
+            links.push(EntityLink {
+                from_kind,
+                from,
+                to_kind,
+                to,
+                events: u64::try_from(n).unwrap_or(0),
+            });
+        }
+        Ok(links)
+    }
+
     /// Nombre d'événements d'une enquête retenus par `filter`.
     pub fn count_filtered(
         &self,
@@ -914,6 +983,30 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(db.count_filtered(inv, &no_port).unwrap(), 1);
+        let links = db.entity_links(inv, &all, 10).unwrap();
+        let summary: Vec<(&str, &str, &str, u64)> = links
+            .iter()
+            .map(|l| (l.from_kind, l.from.as_str(), l.to.as_str(), l.events))
+            .collect();
+        assert_eq!(
+            summary,
+            vec![
+                ("ip", "10.0.0.1", "10.0.0.9", 3),
+                ("user", "root", "10.0.0.1", 2),
+                ("ip", "10.0.0.2", "10.0.0.1", 1)
+            ]
+        );
+        let failed_links = db
+            .entity_links(
+                inv,
+                &EventFilter {
+                    outcome: Some(Outcome::Failure),
+                    ..Default::default()
+                },
+                10,
+            )
+            .unwrap();
+        assert_eq!(failed_links.len(), 2);
         // Les regroupements respectent le filtre.
         let failed = EventFilter {
             outcome: Some(Outcome::Failure),

@@ -14,6 +14,7 @@ import type {
   ProgressHandler,
   Settings,
   StorageInfo,
+  EntityLink,
   EventFilter,
   EventGroup,
   TimelineEvent,
@@ -282,6 +283,21 @@ export async function mockInvoke<T>(command: string, args: Record<string, unknow
           errors: 3,
           firstErrors: [{ line: 57, byteOffset: 9120, message: "JSON invalide : EOF while parsing an object" }],
         } satisfies AnalysisReport;
+      }
+      case "entity_links": {
+        const counts = new Map<string, EntityLink>();
+        for (const e of demoFiltered(args)) {
+          const add = (link: Omit<EntityLink, "events">) => {
+            const key = `${link.fromKind}|${link.from}|${link.toKind}|${link.to}`;
+            const cur = counts.get(key) ?? { ...link, events: 0 };
+            cur.events++;
+            counts.set(key, cur);
+          };
+          if (e.sourceIp && e.destinationIp) add({ fromKind: "ip", from: e.sourceIp, toKind: "ip", to: e.destinationIp });
+          if (e.user && e.sourceIp) add({ fromKind: "user", from: e.user, toKind: "ip", to: e.sourceIp });
+          if (e.sourceIp && e.host) add({ fromKind: "ip", from: e.sourceIp, toKind: "host", to: e.host });
+        }
+        return [...counts.values()].sort((a, b) => b.events - a.events).slice(0, args.limit as number);
       }
       case "event_groups": {
         const groups = new Map<string, EventGroup>();

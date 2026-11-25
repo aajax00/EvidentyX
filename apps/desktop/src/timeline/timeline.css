@@ -154,6 +154,13 @@ button.timeline-row--selected:hover {
   cursor: pointer;
 }
 
+/* Graphe des entités */
+.timeline-graph {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
 /* Regroupements */
 .groups {
   display: flex;
@@ -470,3 +477,79 @@ button.groups__row:hover {
   background: var(--color-surface-hover);
 }
 
+
+/* ——— Graphe des entités ——— */
+
+.entity-graph__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 62vh;
+  background: var(--color-surface-sunken);
+  border: var(--border-width) solid var(--color-border);
+}
+
+.entity-graph__edge {
+  stroke: var(--color-accent);
+  stroke-opacity: 0.35;
+  transition: opacity var(--duration-fast);
+}
+
+.entity-graph__edge--active {
+  stroke: var(--color-accent-hover);
+  stroke-opacity: 0.9;
+}
+
+.entity-graph__node {
+  cursor: pointer;
+  outline: none;
+  transition: opacity var(--duration-fast);
+}
+
+.entity-graph__label {
+  fill: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.entity-graph__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.entity-graph__legend {
+  display: flex;
+  gap: var(--space-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.entity-graph__legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.entity-graph__legend span {
+  width: 10px;
+  height: 10px;
+  border: 2px solid;
+}
+
+.entity-graph__hint {
+  color: var(--color-text-subtle);
+  font-size: var(--text-2xs);
+}
+
+.entity-graph__node:focus-visible rect {
+  stroke: var(--color-focus);
+  stroke-width: 2.5;
+}

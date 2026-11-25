@@ -78,6 +78,7 @@ pub fn run() {
             timeline::events_window,
             timeline::events_count,
             timeline::event_groups,
+            timeline::entity_links,
             overview::investigation_overview,
         ])
         .run(tauri::generate_context!())

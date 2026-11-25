@@ -14,6 +14,7 @@ import { Button, EmptyState, SearchField, SegmentedControl, Select, Spinner } fr
 import { useSettings } from "../settings/SettingsProvider";
 import { useRouter } from "../shell/router";
 import { EventDrawer } from "./EventDrawer";
+import { EntityGraph } from "./EntityGraph";
 import { GroupsView, type Pivot } from "./GroupsView";
 import { BASIS_LABELS, endpoint, eventClock, eventDate, formatMs, isUncertain, kindLabel, zoneLabel } from "./eventFormat";
 import "./timeline.css";
@@ -76,7 +77,7 @@ export function TimelinePage({ id }: { id: number }) {
   const [draft, setDraft] = useState<Draft>(EMPTY);
   /** Flux réseau choisi par pivot (pas de champ de saisie). */
   const [flow, setFlow] = useState<EventFilter["flow"] | null>(null);
-  const [view, setView] = useState<"events" | "groups">("events");
+  const [view, setView] = useState<"events" | "groups" | "graph">("events");
 
   /** L'entité choisie remplace les autres critères d'entité ; période et autres filtres restent. */
   const pivot = (p: Pivot) => {
@@ -228,6 +229,7 @@ export function TimelinePage({ id }: { id: number }) {
             options={[
               { value: "events", label: "Événements" },
               { value: "groups", label: "Regroupements" },
+              { value: "graph", label: "Graphe" },
             ]}
           />
           <SegmentedControl
@@ -334,6 +336,10 @@ export function TimelinePage({ id }: { id: number }) {
 
       {view === "groups" ? (
         <GroupsView investigationId={id} filter={filter} utc={utc} onPivot={pivot} />
+      ) : view === "graph" ? (
+        <div className="timeline-graph">
+          <EntityGraph investigationId={id} filter={filter} onPivot={pivot} />
+        </div>
       ) : (
       <div className="timeline-table" role="table" aria-label="Chronologie" aria-rowcount={count}>
         <div className="timeline-row timeline-row--head" role="row">

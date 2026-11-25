@@ -178,6 +178,42 @@ pub fn events_window(
     })
 }
 
+/// Miroir TypeScript : `EntityLink` dans `apps/desktop/src/api.ts`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EntityLinkDto {
+    pub from_kind: &'static str,
+    pub from: String,
+    pub to_kind: &'static str,
+    pub to: String,
+    pub events: u64,
+}
+
+/// Liens les plus fréquents entre entités, dans les filtres en cours.
+#[tauri::command(async)]
+pub fn entity_links(
+    state: tauri::State<'_, AppState>,
+    investigation_id: i64,
+    filter: FilterDto,
+    limit: u32,
+) -> Result<Vec<EntityLinkDto>, CommandError> {
+    let filter = EventFilter::try_from(filter)?;
+    state.with_storage(|s| {
+        Ok(
+            s.entity_links(InvestigationId::new(investigation_id), &filter, limit)?
+                .into_iter()
+                .map(|l| EntityLinkDto {
+                    from_kind: l.from_kind,
+                    from: l.from,
+                    to_kind: l.to_kind,
+                    to: l.to,
+                    events: l.events,
+                })
+                .collect(),
+        )
+    })
+}
+
 /// Regroupements : `by` vaut "ip", "user", "host" ou "flow".
 #[tauri::command(async)]
 pub fn event_groups(

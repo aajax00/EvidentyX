@@ -328,6 +328,22 @@ export function eventGroups(investigationId: number, filter: EventFilter, by: Gr
   return call("event_groups", { investigationId, filter, by, limit });
 }
 
+export type EntityKind = "ip" | "user" | "host";
+
+/** Miroir de `EntityLinkDto` : lien observé entre deux entités. */
+export interface EntityLink {
+  fromKind: EntityKind;
+  from: string;
+  toKind: EntityKind;
+  to: string;
+  events: number;
+}
+
+/** Liens les plus fréquents entre entités, dans les filtres en cours. */
+export function getEntityLinks(investigationId: number, filter: EventFilter, limit: number): Promise<EntityLink[]> {
+  return call("entity_links", { investigationId, filter, limit });
+}
+
 /** Nombre d'événements retenus par le filtre. */
 export function eventsCount(investigationId: number, filter: EventFilter): Promise<number> {
   return call("events_count", { investigationId, filter });

@@ -70,6 +70,7 @@ Tous les formats de preuve sont convertis vers un **événement canonique** (`ev
 | `investigation_overview` | Statistiques réelles d'une enquête : nombre d'événements, période couverte, activité dans le temps (48 intervalles), catégories, adresses IP, utilisateurs et hôtes distincts, événements par preuve |
 | `events_window`, `events_count` | Événements d'une enquête retenus par un filtre (période, catégorie, preuve, issue, heure incertaine ou absente, adresse, utilisateur, hôte, texte), à partir d'une position de la chronologie (accès direct, pour la liste virtualisée), et leur nombre |
 | `event_groups` | Événements retenus par un filtre, regroupés par adresse IP, utilisateur, hôte ou flux réseau (nombre, échecs, premier et dernier) |
+| `entity_links` | Liens les plus fréquents entre entités (adresse source → destination, utilisateur → adresse, adresse → hôte) parmi les événements retenus par un filtre |
 | `cancel_task` | Annule une tâche longue (`add_evidence`, `analyze_evidence`) ; ces commandes reçoivent un identifiant de tâche et un canal de progression (octets lus sur taille, au plus 10 envois par seconde) |
 | `get_settings`, `update_settings` | Lecture et enregistrement des réglages (validation par `evidentyx-core`) |
 
