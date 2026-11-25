@@ -35,7 +35,7 @@ Objectif : explorer les événements d'une enquête, les filtrer, les relier ent
 
 - [x] **Étape 3.1** — Chronologie d'une enquête : liste virtualisée (millions d'événements), ordre chronologique, détail d'un événement (champs, attributs, texte brut, position dans la preuve)
 - [x] **Étape 3.2** — Filtres et recherche : période, catégorie, preuve, issue, adresse, utilisateur, hôte, texte libre
-- [ ] **Étape 3.3** — Horodatages et incertitude : fuseau d'affichage (local ou UTC), précision et base de l'heure visibles, événements à l'heure déduite ou supposée signalés
+- [x] **Étape 3.3** — Horodatages et incertitude : fuseau d'affichage (local ou UTC), précision et base de l'heure visibles, événements à l'heure déduite ou supposée signalés
 - [ ] **Étape 3.4** — Corrélation : regroupement par entité (adresse, utilisateur, hôte) et par flux réseau, pivot depuis un événement
 - [ ] **Étape 3.5** — Graphe des entités et de leurs relations, navigation vers les événements
 - [ ] **Version `v0.3.0`**

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { CircleAlert, CircleCheck, Copy, Info, X } from "lucide-react";
 import type { TimelineEvent } from "../api";
 import { IconButton, useToast } from "../components/ui";
-import { BASIS_LABELS, endpoint, eventTimeFull, kindLabel } from "./eventFormat";
+import { BASIS_LABELS, PRECISION_LABELS, endpoint, eventTimeFull, isUncertain, kindLabel } from "./eventFormat";
 
 type Tab = "info" | "attributes" | "source";
 
@@ -14,10 +14,13 @@ type Tab = "info" | "attributes" | "source";
 export function EventDrawer({
   event: e,
   evidenceName,
+  utc,
   onClose,
 }: {
   event: TimelineEvent;
   evidenceName: string;
+  /** Heures affichées en UTC (sinon : heure locale). */
+  utc: boolean;
   onClose: () => void;
 }) {
   const { notify } = useToast();
@@ -44,7 +47,8 @@ export function EventDrawer({
     ["Destination", endpoint(e.destinationIp, e.destinationPort)],
     ["Utilisateur", e.user],
     ["Hôte", e.host],
-    ["Fuseau", e.timeBasis ? BASIS_LABELS[e.timeBasis] ?? e.timeBasis : null],
+    ["Précision", e.timePrecision ? (PRECISION_LABELS[e.timePrecision] ?? e.timePrecision) : null],
+    ["Origine de l'heure", e.timeBasis ? (BASIS_LABELS[e.timeBasis] ?? e.timeBasis) : null],
   ];
 
   async function copyRaw() {
@@ -67,7 +71,12 @@ export function EventDrawer({
         <Icon size={20} aria-hidden="true" />
         <div>
           <p className="event-drawer__message">{e.message}</p>
-          <p className="event-drawer__time mono">{eventTimeFull(e)}</p>
+          <p className="event-drawer__time mono">{eventTimeFull(e, utc)}</p>
+          {isUncertain(e) && (
+            <p className="event-drawer__uncertain">
+              Heure incertaine : {e.timeBasis ? BASIS_LABELS[e.timeBasis] : ""}. À recouper avant de conclure.
+            </p>
+          )}
         </div>
       </div>
 

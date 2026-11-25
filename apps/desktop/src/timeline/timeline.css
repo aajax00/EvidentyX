@@ -45,7 +45,7 @@
 
 .timeline-row {
   display: grid;
-  grid-template-columns: 88px 70px 120px minmax(0, 3fr) minmax(0, 2fr) minmax(0, 110px) minmax(0, 150px);
+  grid-template-columns: 88px 86px 120px minmax(0, 3fr) minmax(0, 2fr) minmax(0, 110px) minmax(0, 150px);
   align-items: center;
   gap: var(--space-3);
   width: 100%;
@@ -97,13 +97,29 @@ button.timeline-row--selected:hover {
   cursor: default;
 }
 
+.timeline-row__uncertain {
+  color: var(--color-warning);
+  text-decoration: none;
+  cursor: help;
+}
+
+.timeline-page__zone {
+  margin-left: auto;
+}
+
+.event-drawer__uncertain {
+  margin-top: var(--space-2);
+  color: var(--color-warning);
+  font-size: var(--text-xs);
+}
+
 .timeline-row__muted {
   color: var(--color-text-subtle);
 }
 
 @media (max-width: 1100px) {
   .timeline-row {
-    grid-template-columns: 88px 70px 110px minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: 88px 86px 110px minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .timeline-row > :nth-child(n + 6) {

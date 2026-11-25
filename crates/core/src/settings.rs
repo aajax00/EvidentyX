@@ -54,6 +54,8 @@ pub struct AppSettings {
     pub default_sort: InvestigationSort,
     /// Filtre de statut par défaut de la liste des enquêtes.
     pub default_status_filter: StatusFilter,
+    /// Heures des événements affichées en UTC (sinon : heure locale).
+    pub display_utc: bool,
 }
 
 impl Default for AppSettings {
@@ -64,6 +66,7 @@ impl Default for AppSettings {
             sidebar_collapsed: false,
             default_sort: InvestigationSort::default(),
             default_status_filter: StatusFilter::default(),
+            display_utc: false,
         }
     }
 }
@@ -73,6 +76,7 @@ const KEY_BACKGROUND: &str = "background_animation";
 const KEY_SIDEBAR: &str = "sidebar_collapsed";
 const KEY_SORT: &str = "default_sort";
 const KEY_STATUS: &str = "default_status_filter";
+const KEY_UTC: &str = "display_utc";
 
 fn bool_str(value: bool) -> &'static str {
     if value {
@@ -84,13 +88,14 @@ fn bool_str(value: bool) -> &'static str {
 
 impl AppSettings {
     /// Représentation clé → valeur, ordonnée, pour le stockage.
-    pub fn to_pairs(&self) -> [(&'static str, &'static str); 5] {
+    pub fn to_pairs(&self) -> [(&'static str, &'static str); 6] {
         [
             (KEY_SPLASH, bool_str(self.splash_screen)),
             (KEY_BACKGROUND, bool_str(self.background_animation)),
             (KEY_SIDEBAR, bool_str(self.sidebar_collapsed)),
             (KEY_SORT, self.default_sort.as_str()),
             (KEY_STATUS, self.default_status_filter.as_str()),
+            (KEY_UTC, bool_str(self.display_utc)),
         ]
     }
 
@@ -120,6 +125,7 @@ impl AppSettings {
                     settings.default_status_filter =
                         StatusFilter::parse(value).unwrap_or(settings.default_status_filter)
                 }
+                KEY_UTC => settings.display_utc = flag.unwrap_or(settings.display_utc),
                 _ => {}
             }
         }
@@ -139,6 +145,7 @@ mod tests {
             sidebar_collapsed: true,
             default_sort: InvestigationSort::NameAsc,
             default_status_filter: StatusFilter::All,
+            display_utc: true,
         };
         assert_eq!(AppSettings::from_pairs(settings.to_pairs()), settings);
     }

@@ -29,6 +29,8 @@ pub struct EventFilter {
     pub kind: Option<EventKind>,
     pub evidence_id: Option<EvidenceId>,
     pub outcome: Option<Outcome>,
+    /// Qualité de l'heure : incertaine (fuseau supposé, année déduite) ou absente.
+    pub time: Option<TimeQuality>,
     /// Début d'adresse, en source ou en destination (« 203.0.113. »).
     pub ip: Option<String>,
     /// Partie du nom d'utilisateur.
@@ -37,6 +39,15 @@ pub struct EventFilter {
     pub host: Option<String>,
     /// Partie du message.
     pub text: Option<String>,
+}
+
+/// Critère sur l'heure d'un événement.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TimeQuality {
+    /// Fuseau supposé ou année déduite.
+    Uncertain,
+    /// Aucune heure dans la source.
+    Missing,
 }
 
 impl EventFilter {
@@ -63,6 +74,14 @@ impl EventFilter {
         }
         if let Some(o) = self.outcome {
             add(" AND outcome = ?", vec![text(o.as_str())]);
+        }
+        match self.time {
+            Some(TimeQuality::Uncertain) => add(
+                " AND time_basis IN ('assumed_utc', 'inferred_year')",
+                vec![],
+            ),
+            Some(TimeQuality::Missing) => add(" AND time_us IS NULL", vec![]),
+            None => {}
         }
         if let Some(ip) = self.ip.as_deref().filter(|s| !s.is_empty()) {
             add(
@@ -796,6 +815,21 @@ mod tests {
                 ..Default::default()
             }),
             Vec::<u64>::new()
+        );
+        assert_eq!(
+            offsets(EventFilter {
+                time: Some(TimeQuality::Missing),
+                ..Default::default()
+            }),
+            vec![6]
+        );
+        // `event()` date avec la base « année déduite » : tous les datés sont incertains.
+        assert_eq!(
+            offsets(EventFilter {
+                time: Some(TimeQuality::Uncertain),
+                ..Default::default()
+            }),
+            vec![0, 1, 2, 3, 4, 5]
         );
         // Caractères spéciaux de LIKE sans effet : comparaison littérale.
         assert_eq!(

@@ -3,7 +3,7 @@
 use crate::error::CommandError;
 use crate::state::AppState;
 use evidentyx_core::{Event, EvidenceId, InvestigationId};
-use evidentyx_storage::EventFilter;
+use evidentyx_storage::{EventFilter, TimeQuality};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -73,6 +73,8 @@ pub struct FilterDto {
     pub kind: Option<String>,
     pub evidence_id: Option<i64>,
     pub outcome: Option<String>,
+    /// "uncertain" ou "missing".
+    pub time: Option<String>,
     pub ip: Option<String>,
     pub user: Option<String>,
     pub host: Option<String>,
@@ -92,6 +94,16 @@ impl TryFrom<FilterDto> for EventFilter {
                 .transpose()
                 .map_err(CommandError::from)?,
             evidence_id: f.evidence_id.map(EvidenceId::new),
+            time: match f.time.as_deref() {
+                None => None,
+                Some("uncertain") => Some(TimeQuality::Uncertain),
+                Some("missing") => Some(TimeQuality::Missing),
+                Some(other) => {
+                    return Err(CommandError::invalid_argument(format!(
+                        "Critère d'heure inconnu : « {other} »"
+                    )))
+                }
+            },
             outcome: f
                 .outcome
                 .map(|o| o.parse())
@@ -156,6 +168,14 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(EventFilter::try_from(bad).unwrap_err().code, "validation");
+        let bad = FilterDto {
+            time: Some("parfois".into()),
+            ..Default::default()
+        };
+        assert_eq!(
+            EventFilter::try_from(bad).unwrap_err().code,
+            "invalid_argument"
+        );
         let json = serde_json::json!({ "ip": "10.", "inconnu": 1 });
         assert!(serde_json::from_value::<FilterDto>(json).is_err());
     }

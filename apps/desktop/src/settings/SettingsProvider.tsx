@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sidebarCollapsed: false,
   defaultSort: "updated_desc",
   defaultStatusFilter: "active",
+  displayUtc: false,
 };
 
 interface SettingsApi {
