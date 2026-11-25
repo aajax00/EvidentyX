@@ -6,6 +6,10 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ## [Non publié]
 
+## [0.2.0] - 2026-11-25
+
+Fin de la phase 2 (Ingestion) : les preuves s'ajoutent à une enquête, leur intégrité est vérifiée et leurs événements sont extraits.
+
 ### Corrigé
 
 - CSV : un en-tête contenant une colonne en double (CIC-IDS2017 répète `Fwd Header Length`) était lu comme une ligne de données ; colonnes alors mal nommées.
@@ -70,5 +74,6 @@ Première version : fin de la phase 1 (Fondations). L'application gère les enqu
 - Mode démonstration pour développer l'interface dans un navigateur (signalé à l'écran, absent des paquets).
 - Version minimale de Rust : 1.90.
 
-[Non publié]: https://github.com/aajax00/EvidentyX/compare/v0.1.0...HEAD
+[Non publié]: https://github.com/aajax00/EvidentyX/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/aajax00/EvidentyX/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/aajax00/EvidentyX/releases/tag/v0.1.0

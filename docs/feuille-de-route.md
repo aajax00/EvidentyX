@@ -27,7 +27,7 @@ Objectif : importer des preuves dans une enquête et en extraire des événement
 - [x] **Étape 2.7** — PCAP et PCAPNG : paquets, flux réseau de base (adresses, ports, protocoles)
 - [x] **Étape 2.8** — Import dans l'application : sélection ou glisser-déposer, progression, annulation, rapport d'import (lignes lues, retenues, ignorées, erreurs)
 - [x] **Étape 2.9** — Vue d'ensemble réelle : les statistiques de l'enquête remplacent les données de démonstration
-- [ ] **Version `v0.2.0`**
+- [x] **Version `v0.2.0`** — 2026-11-25
 
 ## Phase 3 — Moteur d'enquête → `v0.3.0`
 
