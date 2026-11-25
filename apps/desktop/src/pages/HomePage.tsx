@@ -11,8 +11,8 @@ const PHASE_TONES = { terminée: "success", prochaine: "accent", planifiée: "ne
 
 const PHASES: ReadonlyArray<{ name: string; content: string; state: PhaseState }> = [
   { name: "Fondations", content: "Application, design, enquêtes, stockage", state: "terminée" },
-  { name: "Ingestion", content: "JSON, CSV, Syslog, Apache/Nginx, PCAP, SHA-256", state: "prochaine" },
-  { name: "Moteur d'enquête", content: "Normalisation, chronologie, corrélation, graphe", state: "planifiée" },
+  { name: "Ingestion", content: "JSON, CSV, Syslog, Apache/Nginx, PCAP, SHA-256", state: "terminée" },
+  { name: "Moteur d'enquête", content: "Normalisation, chronologie, corrélation, graphe", state: "prochaine" },
   { name: "Détection et rapports", content: "Règles, coffre de preuves, exports", state: "planifiée" },
   { name: "Stabilisation", content: "Tests, sécurité, performances, paquets", state: "planifiée" },
 ];
