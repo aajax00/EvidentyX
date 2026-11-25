@@ -3,7 +3,6 @@
 // et le dit explicitement (règle du projet : aucune page factice).
 
 import {
-  Activity,
   FileText,
   FolderSearch,
   House,
@@ -15,7 +14,7 @@ import {
 } from "lucide-react";
 import type { PageId } from "./router";
 
-export type SectionId = Exclude<PageId, "investigation">;
+export type SectionId = Exclude<PageId, "investigation" | "timeline">;
 
 interface NavItemBase {
   label: string;
@@ -53,7 +52,6 @@ export const NAVIGATION: readonly NavGroup[] = [
   {
     label: "Analyse",
     items: [
-      { kind: "planned", label: "Chronologie", icon: Activity, plannedFor: "phase 3" },
       { kind: "planned", label: "Graphe", icon: Network, plannedFor: "phase 3" },
       { kind: "planned", label: "Détections", icon: ShieldAlert, plannedFor: "phase 4" },
       { kind: "planned", label: "Rapports", icon: FileText, plannedFor: "phase 4" },

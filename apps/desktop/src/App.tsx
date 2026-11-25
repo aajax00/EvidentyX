@@ -10,6 +10,7 @@ import { InvestigationPage } from "./pages/InvestigationPage";
 import { InvestigationsPage } from "./pages/InvestigationsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { SettingsProvider, useSettings } from "./settings/SettingsProvider";
+import { TimelinePage } from "./timeline/TimelinePage";
 import { AppShell } from "./shell/AppShell";
 import { RouterProvider, useRouter } from "./shell/router";
 import "./pages/pages.css";
@@ -85,6 +86,8 @@ function CurrentPage() {
       return <InvestigationsPage />;
     case "investigation":
       return <InvestigationPage key={route.id} id={route.id} />;
+    case "timeline":
+      return <TimelinePage key={route.id} id={route.id} />;
     case "settings":
       return <SettingsPage />;
     case "about":

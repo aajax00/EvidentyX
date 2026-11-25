@@ -394,6 +394,64 @@ impl Storage {
         )?)
     }
 
+    /// Événements d'une enquête à partir de la position `offset` dans la
+    /// chronologie (ordre de `list_events` : datés par heure puis id, puis les
+    /// non datés par id). Accès direct à n'importe quelle position, pour une
+    /// liste virtualisée. Les positions sont parcourues dans l'index
+    /// `events_timeline`, sans tri de la table.
+    pub fn events_window(
+        &self,
+        investigation_id: InvestigationId,
+        offset: u64,
+        limit: u32,
+    ) -> Result<Vec<Event>> {
+        self.investigation(investigation_id)?;
+        let inv = investigation_id.get();
+        let limit = i64::from(limit.clamp(1, 1000));
+        let offset = to_i64(offset, "position")?;
+        let timed: i64 = self.conn.query_row(
+            "SELECT count(time_us) FROM events WHERE investigation_id = ?1",
+            [inv],
+            |r| r.get(0),
+        )?;
+        let mut ids: Vec<i64> = Vec::new();
+        if offset < timed {
+            let mut stmt = self.conn.prepare_cached(
+                "SELECT id FROM events WHERE investigation_id = ?1 AND time_us IS NOT NULL
+                 ORDER BY time_us, id LIMIT ?2 OFFSET ?3",
+            )?;
+            for id in stmt.query_map(params![inv, limit, offset], |r| r.get(0))? {
+                ids.push(id?);
+            }
+        }
+        let missing = limit - ids.len() as i64;
+        if missing > 0 {
+            let mut stmt = self.conn.prepare_cached(
+                "SELECT id FROM events WHERE investigation_id = ?1 AND time_us IS NULL
+                 ORDER BY id LIMIT ?2 OFFSET ?3",
+            )?;
+            for id in
+                stmt.query_map(params![inv, missing, (offset - timed).max(0)], |r| r.get(0))?
+            {
+                ids.push(id?);
+            }
+        }
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        // Identifiants entiers issus de la base : insérés tels quels dans la requête.
+        let list = ids.iter().map(i64::to_string).collect::<Vec<_>>().join(",");
+        let mut stmt = self.conn.prepare(&format!(
+            "SELECT {COLUMNS} FROM events WHERE id IN ({list})"
+        ))?;
+        let mut by_id = std::collections::HashMap::new();
+        for e in stmt.query_map([], from_row)? {
+            let e = e??;
+            by_id.insert(e.id.get(), e);
+        }
+        Ok(ids.iter().filter_map(|id| by_id.remove(id)).collect())
+    }
+
     /// Supprime les événements d'une preuve ajoutés après `after_id` (analyse
     /// annulée) ; ceux des analyses précédentes sont conservés.
     pub fn delete_events_after(&mut self, evidence_id: EvidenceId, after_id: i64) -> Result<u64> {
@@ -522,6 +580,44 @@ mod tests {
         db.insert_events(ev, &[event(ev, 0, Some(5)), event(ev, 1, Some(5))])
             .unwrap();
         assert_eq!(db.overview(inv, 3).unwrap().histogram, vec![2, 0, 0]);
+    }
+
+    #[test]
+    fn fenetre_par_position_dans_l_ordre_de_la_chronologie() {
+        let (mut db, inv, ev) = setup();
+        // Heures dans le désordre, deux événements sans heure.
+        let times = [Some(30), None, Some(10), Some(20), None, Some(10)];
+        let batch: Vec<NewEvent> = times
+            .iter()
+            .enumerate()
+            .map(|(i, t)| event(ev, i as u64, *t))
+            .collect();
+        db.insert_events(ev, &batch).unwrap();
+        let order: Vec<u64> = db
+            .list_events(inv, None, 100)
+            .unwrap()
+            .events
+            .iter()
+            .map(|e| e.event.source.byte_offset)
+            .collect();
+        assert_eq!(order, vec![2, 5, 3, 0, 1, 4]);
+        for offset in 0..7u64 {
+            for limit in 1..4u32 {
+                let got: Vec<u64> = db
+                    .events_window(inv, offset, limit)
+                    .unwrap()
+                    .iter()
+                    .map(|e| e.event.source.byte_offset)
+                    .collect();
+                let want: Vec<u64> = order
+                    .iter()
+                    .skip(offset as usize)
+                    .take(limit as usize)
+                    .copied()
+                    .collect();
+                assert_eq!(got, want, "position {offset}, {limit} événements");
+            }
+        }
     }
 
     #[test]

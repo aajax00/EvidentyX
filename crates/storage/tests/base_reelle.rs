@@ -52,5 +52,13 @@ fn vue_d_ensemble() {
             o.by_kind,
             t.elapsed()
         );
+        for offset in [0, o.events / 2, o.events.saturating_sub(100)] {
+            let t = Instant::now();
+            let n = db.events_window(inv.id, offset, 200).unwrap().len();
+            println!(
+                "  fenêtre à la position {offset} : {n} événements en {:.2?}",
+                t.elapsed()
+            );
+        }
     }
 }
