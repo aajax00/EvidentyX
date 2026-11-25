@@ -2,8 +2,9 @@
 
 use crate::error::CommandError;
 use crate::state::AppState;
-use evidentyx_core::{Event, InvestigationId};
-use serde::Serialize;
+use evidentyx_core::{Event, EvidenceId, InvestigationId};
+use evidentyx_storage::EventFilter;
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 /// Miroir TypeScript : `TimelineEvent` dans `apps/desktop/src/api.ts`.
@@ -63,27 +64,101 @@ impl From<Event> for EventDto {
     }
 }
 
+/// Miroir TypeScript : `EventFilter` dans `apps/desktop/src/api.ts`.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct FilterDto {
+    pub from_us: Option<i64>,
+    pub to_us: Option<i64>,
+    pub kind: Option<String>,
+    pub evidence_id: Option<i64>,
+    pub outcome: Option<String>,
+    pub ip: Option<String>,
+    pub user: Option<String>,
+    pub host: Option<String>,
+    pub text: Option<String>,
+}
+
+impl TryFrom<FilterDto> for EventFilter {
+    type Error = CommandError;
+
+    fn try_from(f: FilterDto) -> Result<Self, CommandError> {
+        Ok(EventFilter {
+            from_us: f.from_us,
+            to_us: f.to_us,
+            kind: f
+                .kind
+                .map(|k| k.parse())
+                .transpose()
+                .map_err(CommandError::from)?,
+            evidence_id: f.evidence_id.map(EvidenceId::new),
+            outcome: f
+                .outcome
+                .map(|o| o.parse())
+                .transpose()
+                .map_err(CommandError::from)?,
+            ip: f.ip,
+            user: f.user,
+            host: f.host,
+            text: f.text,
+        })
+    }
+}
+
 // Hors du fil de la fenêtre : la base peut être occupée.
+#[tauri::command(async)]
+pub fn events_count(
+    state: tauri::State<'_, AppState>,
+    investigation_id: i64,
+    filter: FilterDto,
+) -> Result<u64, CommandError> {
+    let filter = EventFilter::try_from(filter)?;
+    state.with_storage(|s| Ok(s.count_filtered(InvestigationId::new(investigation_id), &filter)?))
+}
+
 #[tauri::command(async)]
 pub fn events_window(
     state: tauri::State<'_, AppState>,
     investigation_id: i64,
+    filter: FilterDto,
     offset: u64,
     limit: u32,
 ) -> Result<Vec<EventDto>, CommandError> {
+    let filter = EventFilter::try_from(filter)?;
     state.with_storage(|s| {
-        Ok(
-            s.events_window(InvestigationId::new(investigation_id), offset, limit)?
-                .into_iter()
-                .map(Into::into)
-                .collect(),
-        )
+        Ok(s.events_window(
+            InvestigationId::new(investigation_id),
+            &filter,
+            offset,
+            limit,
+        )?
+        .into_iter()
+        .map(Into::into)
+        .collect())
     })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn filtre_valide_a_la_frontiere() {
+        let ok = FilterDto {
+            kind: Some("network".into()),
+            outcome: Some("failure".into()),
+            ..Default::default()
+        };
+        let f = EventFilter::try_from(ok).unwrap();
+        assert_eq!(f.kind, Some(evidentyx_core::EventKind::Network));
+        let bad = FilterDto {
+            kind: Some("inconnu".into()),
+            ..Default::default()
+        };
+        assert_eq!(EventFilter::try_from(bad).unwrap_err().code, "validation");
+        let json = serde_json::json!({ "ip": "10.", "inconnu": 1 });
+        assert!(serde_json::from_value::<FilterDto>(json).is_err());
+    }
 
     #[test]
     fn evenement_serialise_en_camel_case() {

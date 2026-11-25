@@ -3,9 +3,10 @@
 use crate::error::{Result, StorageError};
 use crate::Storage;
 use evidentyx_core::{
-    Event, EventId, EventKind, EventTime, EvidenceId, InvestigationId, NewEvent, SourceRef,
+    Event, EventId, EventKind, EventTime, EvidenceId, InvestigationId, NewEvent, Outcome, SourceRef,
 };
-use rusqlite::{params, Row, Transaction};
+use rusqlite::types::Value;
+use rusqlite::{params, params_from_iter, Row, Transaction};
 use std::collections::BTreeMap;
 use std::net::IpAddr;
 
@@ -16,6 +17,71 @@ pub struct InsertReport {
     pub inserted: u64,
     /// Événements ignorés car leur enregistrement source l'était déjà (réimport).
     pub duplicates: u64,
+}
+
+/// Critères de la chronologie ; un champ absent ne filtre pas. Les textes
+/// sont comparés tels quels, sauf `text` (sans casse, lettres ASCII).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct EventFilter {
+    /// Période, bornes incluses (µs UTC). Exclut les événements sans heure.
+    pub from_us: Option<i64>,
+    pub to_us: Option<i64>,
+    pub kind: Option<EventKind>,
+    pub evidence_id: Option<EvidenceId>,
+    pub outcome: Option<Outcome>,
+    /// Début d'adresse, en source ou en destination (« 203.0.113. »).
+    pub ip: Option<String>,
+    /// Partie du nom d'utilisateur.
+    pub user: Option<String>,
+    /// Partie du nom d'hôte.
+    pub host: Option<String>,
+    /// Partie du message.
+    pub text: Option<String>,
+}
+
+impl EventFilter {
+    /// Conditions SQL (`AND …`, paramètres anonymes) et leurs valeurs, dans l'ordre.
+    fn sql(&self) -> (String, Vec<Value>) {
+        let mut clause = String::new();
+        let mut values = Vec::new();
+        let mut add = |sql: &str, v: Vec<Value>| {
+            clause.push_str(sql);
+            values.extend(v);
+        };
+        let text = |s: &str| Value::Text(s.to_owned());
+        if let Some(t) = self.from_us {
+            add(" AND time_us >= ?", vec![Value::Integer(t)]);
+        }
+        if let Some(t) = self.to_us {
+            add(" AND time_us <= ?", vec![Value::Integer(t)]);
+        }
+        if let Some(k) = self.kind {
+            add(" AND kind = ?", vec![text(k.as_str())]);
+        }
+        if let Some(e) = self.evidence_id {
+            add(" AND evidence_id = ?", vec![Value::Integer(e.get())]);
+        }
+        if let Some(o) = self.outcome {
+            add(" AND outcome = ?", vec![text(o.as_str())]);
+        }
+        if let Some(ip) = self.ip.as_deref().filter(|s| !s.is_empty()) {
+            add(
+                " AND (instr(source_ip, ?) = 1 OR instr(destination_ip, ?) = 1)",
+                vec![text(ip), text(ip)],
+            );
+        }
+        if let Some(u) = self.user.as_deref().filter(|s| !s.is_empty()) {
+            add(" AND instr(user_name, ?) > 0", vec![text(u)]);
+        }
+        if let Some(h) = self.host.as_deref().filter(|s| !s.is_empty()) {
+            add(" AND instr(host, ?) > 0", vec![text(h)]);
+        }
+        // shortcut: recherche par sous-chaîne (parcours des lignes retenues) ; index plein texte FTS5 si trop lent sur de grosses enquêtes.
+        if let Some(t) = self.text.as_deref().filter(|s| !s.is_empty()) {
+            add(" AND instr(lower(message), lower(?)) > 0", vec![text(t)]);
+        }
+        (clause, values)
+    }
 }
 
 /// Statistiques d'une enquête (vue d'ensemble).
@@ -394,45 +460,71 @@ impl Storage {
         )?)
     }
 
-    /// Événements d'une enquête à partir de la position `offset` dans la
-    /// chronologie (ordre de `list_events` : datés par heure puis id, puis les
-    /// non datés par id). Accès direct à n'importe quelle position, pour une
-    /// liste virtualisée. Les positions sont parcourues dans l'index
-    /// `events_timeline`, sans tri de la table.
+    /// Nombre d'événements d'une enquête retenus par `filter`.
+    pub fn count_filtered(
+        &self,
+        investigation_id: InvestigationId,
+        filter: &EventFilter,
+    ) -> Result<u64> {
+        self.investigation(investigation_id)?;
+        let (clause, mut values) = filter.sql();
+        values.insert(0, Value::Integer(investigation_id.get()));
+        let n: i64 = self.conn.query_row(
+            &format!("SELECT count(*) FROM events WHERE investigation_id = ?{clause}"),
+            params_from_iter(values),
+            |r| r.get(0),
+        )?;
+        Ok(u64::try_from(n).unwrap_or(0))
+    }
+
+    /// Événements d'une enquête retenus par `filter`, à partir de la position
+    /// `offset` dans la chronologie (ordre de `list_events` : datés par heure
+    /// puis id, puis les non datés par id). Accès direct à n'importe quelle
+    /// position, pour une liste virtualisée. Les positions sont parcourues
+    /// dans l'index `events_timeline`, sans tri de la table.
     pub fn events_window(
         &self,
         investigation_id: InvestigationId,
+        filter: &EventFilter,
         offset: u64,
         limit: u32,
     ) -> Result<Vec<Event>> {
         self.investigation(investigation_id)?;
-        let inv = investigation_id.get();
+        let inv = Value::Integer(investigation_id.get());
         let limit = i64::from(limit.clamp(1, 1000));
         let offset = to_i64(offset, "position")?;
+        let (clause, values) = filter.sql();
+        let with = |extra: &[i64]| {
+            std::iter::once(inv.clone())
+                .chain(values.iter().cloned())
+                .chain(extra.iter().map(|v| Value::Integer(*v)))
+                .collect::<Vec<_>>()
+        };
         let timed: i64 = self.conn.query_row(
-            "SELECT count(time_us) FROM events WHERE investigation_id = ?1",
-            [inv],
+            &format!("SELECT count(*) FROM events WHERE investigation_id = ? AND time_us IS NOT NULL{clause}"),
+            params_from_iter(with(&[])),
             |r| r.get(0),
         )?;
         let mut ids: Vec<i64> = Vec::new();
         if offset < timed {
-            let mut stmt = self.conn.prepare_cached(
-                "SELECT id FROM events WHERE investigation_id = ?1 AND time_us IS NOT NULL
-                 ORDER BY time_us, id LIMIT ?2 OFFSET ?3",
-            )?;
-            for id in stmt.query_map(params![inv, limit, offset], |r| r.get(0))? {
+            let mut stmt = self.conn.prepare_cached(&format!(
+                "SELECT id FROM events WHERE investigation_id = ? AND time_us IS NOT NULL{clause}
+                 ORDER BY time_us, id LIMIT ? OFFSET ?"
+            ))?;
+            for id in stmt.query_map(params_from_iter(with(&[limit, offset])), |r| r.get(0))? {
                 ids.push(id?);
             }
         }
         let missing = limit - ids.len() as i64;
         if missing > 0 {
-            let mut stmt = self.conn.prepare_cached(
-                "SELECT id FROM events WHERE investigation_id = ?1 AND time_us IS NULL
-                 ORDER BY id LIMIT ?2 OFFSET ?3",
-            )?;
-            for id in
-                stmt.query_map(params![inv, missing, (offset - timed).max(0)], |r| r.get(0))?
-            {
+            let mut stmt = self.conn.prepare_cached(&format!(
+                "SELECT id FROM events WHERE investigation_id = ? AND time_us IS NULL{clause}
+                 ORDER BY id LIMIT ? OFFSET ?"
+            ))?;
+            for id in stmt.query_map(
+                params_from_iter(with(&[missing, (offset - timed).max(0)])),
+                |r| r.get(0),
+            )? {
                 ids.push(id?);
             }
         }
@@ -604,7 +696,7 @@ mod tests {
         for offset in 0..7u64 {
             for limit in 1..4u32 {
                 let got: Vec<u64> = db
-                    .events_window(inv, offset, limit)
+                    .events_window(inv, &EventFilter::default(), offset, limit)
                     .unwrap()
                     .iter()
                     .map(|e| e.event.source.byte_offset)
@@ -618,6 +710,110 @@ mod tests {
                 assert_eq!(got, want, "position {offset}, {limit} événements");
             }
         }
+    }
+
+    #[test]
+    fn filtres_de_la_chronologie() {
+        let (mut db, inv, ev) = setup();
+        let mut batch: Vec<NewEvent> = (0..6).map(|i| event(ev, i, Some(i as i64 * 10))).collect();
+        batch.push(event(ev, 6, None));
+        batch[1].source_ip = Some("203.0.113.7".parse().unwrap());
+        batch[2].destination_ip = Some("203.0.113.9".parse().unwrap());
+        batch[3].source_ip = Some("10.203.0.1".parse().unwrap());
+        batch[2].user = Some("Administrateur".into());
+        batch[4].host = Some("srv-web-01".into());
+        batch[5].outcome = Some(Outcome::Failure);
+        batch[5].kind = EventKind::Network;
+        batch[5].message = "Connexion REFUSÉE".into();
+        db.insert_events(ev, &batch).unwrap();
+        let offsets = |f: EventFilter| -> Vec<u64> {
+            let n = db.count_filtered(inv, &f).unwrap();
+            let got: Vec<u64> = db
+                .events_window(inv, &f, 0, 100)
+                .unwrap()
+                .iter()
+                .map(|e| e.event.source.byte_offset)
+                .collect();
+            assert_eq!(n, got.len() as u64);
+            got
+        };
+        assert_eq!(offsets(EventFilter::default()), vec![0, 1, 2, 3, 4, 5, 6]);
+        assert_eq!(
+            offsets(EventFilter {
+                from_us: Some(10),
+                to_us: Some(30),
+                ..Default::default()
+            }),
+            vec![1, 2, 3]
+        );
+        // Préfixe : « 203. » ne retient pas 10.203.0.1.
+        assert_eq!(
+            offsets(EventFilter {
+                ip: Some("203.".into()),
+                ..Default::default()
+            }),
+            vec![1, 2]
+        );
+        assert_eq!(
+            offsets(EventFilter {
+                user: Some("admin".into()),
+                ..Default::default()
+            }),
+            Vec::<u64>::new()
+        );
+        assert_eq!(
+            offsets(EventFilter {
+                user: Some("Admin".into()),
+                ..Default::default()
+            }),
+            vec![2]
+        );
+        assert_eq!(
+            offsets(EventFilter {
+                host: Some("web".into()),
+                ..Default::default()
+            }),
+            vec![4]
+        );
+        assert_eq!(
+            offsets(EventFilter {
+                text: Some("connexion".into()),
+                ..Default::default()
+            }),
+            vec![5]
+        );
+        assert_eq!(
+            offsets(EventFilter {
+                kind: Some(EventKind::Network),
+                outcome: Some(Outcome::Failure),
+                ..Default::default()
+            }),
+            vec![5]
+        );
+        assert_eq!(
+            offsets(EventFilter {
+                evidence_id: Some(EvidenceId::new(999)),
+                ..Default::default()
+            }),
+            Vec::<u64>::new()
+        );
+        // Caractères spéciaux de LIKE sans effet : comparaison littérale.
+        assert_eq!(
+            offsets(EventFilter {
+                text: Some("%".into()),
+                ..Default::default()
+            }),
+            Vec::<u64>::new()
+        );
+        // Position au-delà des datés : les non datés suivent.
+        assert_eq!(
+            db.events_window(inv, &EventFilter::default(), 6, 10)
+                .unwrap()[0]
+                .event
+                .source
+                .byte_offset,
+            6
+        );
     }
 
     #[test]
