@@ -7,7 +7,6 @@ import {
   FolderSearch,
   House,
   Info,
-  Network,
   Settings,
   ShieldAlert,
   type LucideIcon,
@@ -52,7 +51,6 @@ export const NAVIGATION: readonly NavGroup[] = [
   {
     label: "Analyse",
     items: [
-      { kind: "planned", label: "Graphe", icon: Network, plannedFor: "phase 3" },
       { kind: "planned", label: "Détections", icon: ShieldAlert, plannedFor: "phase 4" },
       { kind: "planned", label: "Rapports", icon: FileText, plannedFor: "phase 4" },
     ],

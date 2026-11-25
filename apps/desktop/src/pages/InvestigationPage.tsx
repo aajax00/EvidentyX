@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   FileText,
   FolderX,
-  Network,
   Pencil,
   ShieldAlert,
   Trash2,
@@ -28,7 +27,6 @@ import { OverviewPanel } from "../overview/OverviewPanel";
 import { useRouter } from "../shell/router";
 
 const MODULES: ReadonlyArray<{ icon: LucideIcon; name: string; text: string; plannedFor: string }> = [
-  { icon: Network, name: "Graphe", text: "Entités et relations reconstituées.", plannedFor: "phase 3" },
   { icon: ShieldAlert, name: "Détections", text: "Règles versionnées et explicables.", plannedFor: "phase 4" },
   { icon: FileText, name: "Rapports", text: "Exports PDF, JSON et CSV.", plannedFor: "phase 4" },
 ];
