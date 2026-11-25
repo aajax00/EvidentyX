@@ -76,6 +76,7 @@ pub fn run() {
             analysis::analyze_evidence,
             tasks::cancel_task,
             timeline::events_window,
+            timeline::events_count,
             overview::investigation_overview,
         ])
         .run(tauri::generate_context!())

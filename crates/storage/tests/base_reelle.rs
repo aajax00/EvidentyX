@@ -54,9 +54,36 @@ fn vue_d_ensemble() {
         );
         for offset in [0, o.events / 2, o.events.saturating_sub(100)] {
             let t = Instant::now();
-            let n = db.events_window(inv.id, offset, 200).unwrap().len();
+            let n = db
+                .events_window(inv.id, &Default::default(), offset, 200)
+                .unwrap()
+                .len();
             println!(
                 "  fenêtre à la position {offset} : {n} événements en {:.2?}",
+                t.elapsed()
+            );
+        }
+        for (name, f) in [
+            (
+                "texte « failed »",
+                evidentyx_storage::EventFilter {
+                    text: Some("failed".into()),
+                    ..Default::default()
+                },
+            ),
+            (
+                "adresse « 192.168. »",
+                evidentyx_storage::EventFilter {
+                    ip: Some("192.168.".into()),
+                    ..Default::default()
+                },
+            ),
+        ] {
+            let t = Instant::now();
+            let n = db.count_filtered(inv.id, &f).unwrap();
+            let w = db.events_window(inv.id, &f, n / 2, 200).unwrap().len();
+            println!(
+                "  filtre {name} : {n} retenus, fenêtre au milieu {w} en {:.2?}",
                 t.elapsed()
             );
         }

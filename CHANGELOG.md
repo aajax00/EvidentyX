@@ -8,6 +8,7 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ### Ajouté
 
+- Filtres de la chronologie : recherche dans les messages (sans casse), catégorie, preuve, issue, début d'adresse IP (source ou destination), utilisateur, hôte, période (heure locale, bornes incluses) ; nombre d'événements retenus affiché ; bouton « Réinitialiser » ; commande `events_count`.
 - Chronologie d'une enquête (bouton « Chronologie ») : tous les événements dans l'ordre chronologique, sans heure à la fin ; liste virtualisée qui reste fluide sur des millions d'événements (seules les lignes visibles sont chargées) ; détail d'un événement (champs normalisés, attributs d'origine, texte brut, preuve, ligne et octet) ; commande `events_window`.
 
 ## [0.2.0] - 2026-11-25

@@ -287,12 +287,38 @@ export interface TimelineEvent {
   attributes: Record<string, string>;
 }
 
+/** Miroir de `FilterDto` (src-tauri/src/timeline.rs) ; un champ absent ne filtre pas. */
+export interface EventFilter {
+  /** Période, bornes incluses, µs UTC. */
+  fromUs?: number;
+  toUs?: number;
+  kind?: string;
+  evidenceId?: number;
+  outcome?: "success" | "failure";
+  /** Début d'adresse, en source ou en destination. */
+  ip?: string;
+  user?: string;
+  host?: string;
+  /** Partie du message (sans casse). */
+  text?: string;
+}
+
+/** Nombre d'événements retenus par le filtre. */
+export function eventsCount(investigationId: number, filter: EventFilter): Promise<number> {
+  return call("events_count", { investigationId, filter });
+}
+
 /**
- * Événements à partir de la position `offset` de la chronologie (ordre
- * chronologique, événements sans heure à la fin).
+ * Événements retenus par le filtre, à partir de la position `offset` de la
+ * chronologie (ordre chronologique, événements sans heure à la fin).
  */
-export function eventsWindow(investigationId: number, offset: number, limit: number): Promise<TimelineEvent[]> {
-  return call("events_window", { investigationId, offset, limit });
+export function eventsWindow(
+  investigationId: number,
+  filter: EventFilter,
+  offset: number,
+  limit: number,
+): Promise<TimelineEvent[]> {
+  return call("events_window", { investigationId, filter, offset, limit });
 }
 
 export function getOverview(investigationId: number): Promise<Overview> {

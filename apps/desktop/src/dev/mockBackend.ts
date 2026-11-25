@@ -14,6 +14,7 @@ import type {
   ProgressHandler,
   Settings,
   StorageInfo,
+  EventFilter,
   TimelineEvent,
 } from "../api";
 
@@ -181,6 +182,23 @@ function demoEvents(investigationId: number): TimelineEvent[] {
   return out;
 }
 
+/** Événements démo retenus par le filtre (mêmes règles que le moteur). */
+function demoFiltered(args: Record<string, unknown>): TimelineEvent[] {
+  const f = args.filter as EventFilter;
+  return demoEvents(args.investigationId as number).filter(
+    (e) =>
+      (f.fromUs === undefined || (e.timeUs !== null && e.timeUs >= f.fromUs)) &&
+      (f.toUs === undefined || (e.timeUs !== null && e.timeUs <= f.toUs)) &&
+      (!f.kind || e.kind === f.kind) &&
+      (f.evidenceId === undefined || e.evidenceId === f.evidenceId) &&
+      (!f.outcome || e.outcome === f.outcome) &&
+      (!f.ip || !!e.sourceIp?.startsWith(f.ip) || !!e.destinationIp?.startsWith(f.ip)) &&
+      (!f.user || !!e.user?.includes(f.user)) &&
+      (!f.host || !!e.host?.includes(f.host)) &&
+      (!f.text || e.message.toLowerCase().includes(f.text.toLowerCase())),
+  );
+}
+
 export async function mockInvoke<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {
   await new Promise((r) => setTimeout(r, 80));
   if (command === "cancel_task") {
@@ -254,9 +272,11 @@ export async function mockInvoke<T>(command: string, args: Record<string, unknow
           firstErrors: [{ line: 57, byteOffset: 9120, message: "JSON invalide : EOF while parsing an object" }],
         } satisfies AnalysisReport;
       }
+      case "events_count":
+        return demoFiltered(args).length;
       case "events_window": {
         const offset = args.offset as number;
-        return demoEvents(args.investigationId as number).slice(offset, offset + (args.limit as number));
+        return demoFiltered(args).slice(offset, offset + (args.limit as number));
       }
       case "investigation_overview": {
         find(args.investigationId);
