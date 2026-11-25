@@ -67,6 +67,12 @@ export function SettingsPage() {
           checked={settings.sidebarCollapsed}
           onChange={(v) => change({ sidebarCollapsed: v })}
         />
+        <Switch
+          label="Heures des événements en UTC"
+          description="Sinon, heure locale de cet ordinateur. Modifiable aussi depuis la chronologie."
+          checked={settings.displayUtc}
+          onChange={(v) => change({ displayUtc: v })}
+        />
       </Panel>
 
       <Panel title="Liste des enquêtes">

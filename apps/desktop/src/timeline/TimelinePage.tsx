@@ -10,11 +10,11 @@ import {
   type Overview,
   type TimelineEvent,
 } from "../api";
-import { Button, EmptyState, SearchField, Select, Spinner } from "../components/ui";
-import { formatDateTime } from "../format";
+import { Button, EmptyState, SearchField, SegmentedControl, Select, Spinner } from "../components/ui";
+import { useSettings } from "../settings/SettingsProvider";
 import { useRouter } from "../shell/router";
 import { EventDrawer } from "./EventDrawer";
-import { endpoint, eventClock, eventDate, kindLabel } from "./eventFormat";
+import { BASIS_LABELS, endpoint, eventClock, eventDate, formatMs, isUncertain, kindLabel, zoneLabel } from "./eventFormat";
 import "./timeline.css";
 
 /** Hauteur d'une ligne (px) : la liste est virtualisée sur cette base. */
@@ -29,25 +29,26 @@ const MAX_PX = 8_000_000;
 const number = new Intl.NumberFormat("fr-FR");
 
 /** Saisie des filtres (texte des champs ; vide : pas de filtre). */
-const EMPTY = { text: "", kind: "", evidence: "", outcome: "", ip: "", user: "", host: "", from: "", to: "" };
+const EMPTY = { text: "", kind: "", evidence: "", outcome: "", time: "", ip: "", user: "", host: "", from: "", to: "" };
 type Draft = typeof EMPTY;
 
-/** Heure locale « AAAA-MM-JJTHH:MM » d'un champ datetime-local → µs UTC (début ou fin de la minute). */
-function localToUs(value: string, end: boolean): number | undefined {
-  const ms = new Date(value).getTime();
+/** « AAAA-MM-JJTHH:MM » d'un champ datetime-local, lu dans le fuseau d'affichage → µs UTC (début ou fin de la minute). */
+function fieldToUs(value: string, end: boolean, utc: boolean): number | undefined {
+  const ms = new Date(utc ? `${value}Z` : value).getTime();
   if (!value || Number.isNaN(ms)) return undefined;
   return ms * 1000 + (end ? 59_999_999 : 0);
 }
 
-function toFilter(d: Draft): EventFilter {
+function toFilter(d: Draft, utc: boolean): EventFilter {
   const f: EventFilter = {};
-  const from = localToUs(d.from, false);
-  const to = localToUs(d.to, true);
+  const from = fieldToUs(d.from, false, utc);
+  const to = fieldToUs(d.to, true, utc);
   if (from !== undefined) f.fromUs = from;
   if (to !== undefined) f.toUs = to;
   if (d.kind) f.kind = d.kind;
   if (d.evidence) f.evidenceId = Number(d.evidence);
   if (d.outcome === "success" || d.outcome === "failure") f.outcome = d.outcome;
+  if (d.time === "uncertain" || d.time === "missing") f.time = d.time;
   for (const k of ["ip", "user", "host", "text"] as const) if (d[k].trim()) f[k] = d[k].trim();
   return f;
 }
@@ -68,6 +69,8 @@ export function TimelinePage({ id }: { id: number }) {
   const [scrollTop, setScrollTop] = useState(0);
   const [viewport, setViewport] = useState(600);
   const [selected, setSelected] = useState<TimelineEvent | null>(null);
+  const { settings, update } = useSettings();
+  const utc = settings.displayUtc;
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [filter, setFilter] = useState<EventFilter>({});
   const [total, setTotal] = useState<number | null>(null);
@@ -78,12 +81,12 @@ export function TimelinePage({ id }: { id: number }) {
   // Saisie appliquée après une courte pause (pas une requête par touche).
   useEffect(() => {
     const t = setTimeout(() => {
-      const next = toFilter(draft);
+      const next = toFilter(draft, utc);
       // Même filtre : rien à recharger.
       setFilter((cur) => (JSON.stringify(cur) === JSON.stringify(next) ? cur : next));
     }, 300);
     return () => clearTimeout(t);
-  }, [draft]);
+  }, [draft, utc]);
 
   useEffect(() => {
     const gen = ++generation.current;
@@ -201,9 +204,20 @@ export function TimelinePage({ id }: { id: number }) {
           <strong className="mono">{number.format(overview.events)}</strong> événement{overview.events > 1 ? "s" : ""}
           {overview.firstAt !== null &&
             overview.lastAt !== null &&
-            ` · du ${formatDateTime(overview.firstAt)} au ${formatDateTime(overview.lastAt)} (heure locale)`}
+            ` · du ${formatMs(overview.firstAt, utc)} au ${formatMs(overview.lastAt, utc)} (${zoneLabel(utc)})`}
           {untimed > 0 && ` · ${number.format(untimed)} sans heure, à la fin`}
         </p>
+        <span className="timeline-page__zone">
+          <SegmentedControl
+            label="Fuseau d'affichage"
+            value={utc ? "utc" : "local"}
+            onChange={(v) => void update({ displayUtc: v === "utc" }).catch((e: unknown) => setError(toCommandError(e).message))}
+            options={[
+              { value: "local", label: "Heure locale" },
+              { value: "utc", label: "UTC" },
+            ]}
+          />
+        </span>
       </div>
 
       <div className="timeline-filters" role="search" aria-label="Filtrer la chronologie">
@@ -238,6 +252,16 @@ export function TimelinePage({ id }: { id: number }) {
             { value: "failure", label: "Échec" },
           ]}
         />
+        <Select
+          label="Heure"
+          value={draft.time}
+          onChange={set("time")}
+          options={[
+            { value: "", label: "Toutes" },
+            { value: "uncertain", label: "Incertaine" },
+            { value: "missing", label: "Absente" },
+          ]}
+        />
         {(
           [
             ["ip", "Adresse IP (début)", "203.0.113."],
@@ -255,7 +279,7 @@ export function TimelinePage({ id }: { id: number }) {
             onChange={(e) => set(k)(e.target.value)}
           />
         ))}
-        <label className="timeline-filters__period">
+        <label className="timeline-filters__period" title={`Période en ${zoneLabel(utc)}`}>
           Du
           <input type="datetime-local" className="ui-input" value={draft.from} onChange={(e) => set("from")(e.target.value)} />
         </label>
@@ -303,8 +327,15 @@ export function TimelinePage({ id }: { id: number }) {
                   className={`timeline-row${selected?.id === e.id ? " timeline-row--selected" : ""}${e.outcome === "failure" ? " timeline-row--failure" : ""}`}
                   onClick={() => setSelected(e)}
                 >
-                  <span role="cell" className="mono">{eventDate(e)}</span>
-                  <span role="cell" className="mono">{eventClock(e)}</span>
+                  <span role="cell" className="mono">{eventDate(e, utc)}</span>
+                  <span role="cell" className="mono">
+                    {eventClock(e, utc)}
+                    {isUncertain(e) && (
+                      <abbr className="timeline-row__uncertain" title={`Heure incertaine : ${e.timeBasis ? BASIS_LABELS[e.timeBasis] : ""}`}>
+                        {" "}≈
+                      </abbr>
+                    )}
+                  </span>
                   <span role="cell">
                     <span className={`kind-tag kind-tag--${e.kind}`}>{kindLabel(e.kind)}</span>
                   </span>
@@ -335,6 +366,7 @@ export function TimelinePage({ id }: { id: number }) {
         <EventDrawer
           event={selected}
           evidenceName={names.get(selected.evidenceId) ?? `preuve n° ${selected.evidenceId}`}
+          utc={utc}
           onClose={() => setSelected(null)}
         />
       )}

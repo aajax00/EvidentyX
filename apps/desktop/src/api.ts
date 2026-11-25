@@ -144,6 +144,8 @@ export interface Settings {
   sidebarCollapsed: boolean;
   defaultSort: InvestigationSort;
   defaultStatusFilter: StatusFilter;
+  /** Heures des événements en UTC (sinon : heure locale). */
+  displayUtc: boolean;
 }
 
 export function getSettings(): Promise<Settings> {
@@ -295,6 +297,8 @@ export interface EventFilter {
   kind?: string;
   evidenceId?: number;
   outcome?: "success" | "failure";
+  /** Heure incertaine (fuseau supposé, année déduite) ou absente. */
+  time?: "uncertain" | "missing";
   /** Début d'adresse, en source ou en destination. */
   ip?: string;
   user?: string;

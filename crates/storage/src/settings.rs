@@ -47,6 +47,7 @@ mod tests {
             splash_screen: false,
             default_sort: InvestigationSort::NameAsc,
             default_status_filter: StatusFilter::All,
+            display_utc: true,
             ..AppSettings::default()
         };
         assert_eq!(db.save_settings(&changed).unwrap(), changed);

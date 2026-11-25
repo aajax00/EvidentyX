@@ -17,6 +17,8 @@ pub struct SettingsDto {
     pub default_sort: String,
     /// "active", "archived" ou "all".
     pub default_status_filter: String,
+    /// Heures des événements en UTC (sinon : heure locale).
+    pub display_utc: bool,
 }
 
 impl From<AppSettings> for SettingsDto {
@@ -27,6 +29,7 @@ impl From<AppSettings> for SettingsDto {
             sidebar_collapsed: s.sidebar_collapsed,
             default_sort: s.default_sort.as_str().to_owned(),
             default_status_filter: s.default_status_filter.as_str().to_owned(),
+            display_utc: s.display_utc,
         }
     }
 }
@@ -50,6 +53,7 @@ impl TryFrom<SettingsDto> for AppSettings {
                     ))
                 },
             )?,
+            display_utc: dto.display_utc,
         })
     }
 }

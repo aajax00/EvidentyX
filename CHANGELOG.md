@@ -8,6 +8,7 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ### Ajouté
 
+- Heures de la chronologie : fuseau d'affichage au choix (heure locale ou UTC, depuis la chronologie ou les Paramètres, enregistré) ; heure incertaine (fuseau supposé, année déduite) signalée par « ≈ » et expliquée dans le détail ; précision de l'heure affichée (jour, seconde, milliseconde, microseconde, fraction comprise) ; filtre « Heure : incertaine / absente » ; période des filtres saisie dans le fuseau d'affichage.
 - Filtres de la chronologie : recherche dans les messages (sans casse), catégorie, preuve, issue, début d'adresse IP (source ou destination), utilisateur, hôte, période (heure locale, bornes incluses) ; nombre d'événements retenus affiché ; bouton « Réinitialiser » ; commande `events_count`.
 - Chronologie d'une enquête (bouton « Chronologie ») : tous les événements dans l'ordre chronologique, sans heure à la fin ; liste virtualisée qui reste fluide sur des millions d'événements (seules les lignes visibles sont chargées) ; détail d'un événement (champs normalisés, attributs d'origine, texte brut, preuve, ligne et octet) ; commande `events_window`.
 

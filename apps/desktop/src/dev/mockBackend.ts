@@ -54,6 +54,7 @@ let settings: Settings = {
   sidebarCollapsed: false,
   defaultSort: "updated_desc",
   defaultStatusFilter: "active",
+  displayUtc: false,
 };
 
 const evidence: Evidence[] = [
@@ -162,7 +163,7 @@ function demoEvents(investigationId: number): TimelineEvent[] {
         record: null,
         timeUs: t0 + i * 432_000_000,
         timePrecision: "second",
-        timeBasis: "explicit",
+        timeBasis: i % 7 === 3 ? "assumed_utc" : "explicit",
         kind: "authentication",
         host: "srv-web-01",
         sourceIp: ip,
@@ -192,6 +193,8 @@ function demoFiltered(args: Record<string, unknown>): TimelineEvent[] {
       (!f.kind || e.kind === f.kind) &&
       (f.evidenceId === undefined || e.evidenceId === f.evidenceId) &&
       (!f.outcome || e.outcome === f.outcome) &&
+      (!f.time ||
+        (f.time === "missing" ? e.timeUs === null : e.timeBasis === "assumed_utc" || e.timeBasis === "inferred_year")) &&
       (!f.ip || !!e.sourceIp?.startsWith(f.ip) || !!e.destinationIp?.startsWith(f.ip)) &&
       (!f.user || !!e.user?.includes(f.user)) &&
       (!f.host || !!e.host?.includes(f.host)) &&
