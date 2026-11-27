@@ -8,6 +8,7 @@
 //! relit de la base, pour ne jamais propager une donnée corrompue.
 
 mod clock;
+mod detection;
 mod error;
 mod events;
 mod evidence;
@@ -16,6 +17,7 @@ mod migrations;
 mod settings;
 
 pub use clock::{Clock, SystemClock};
+pub use detection::{Detection, Measure, Rule, Severity, RULES};
 pub use error::{Result, StorageError};
 pub use events::{
     EntityLink, EventFilter, EventPage, FlowKey, Group, GroupBy, InsertReport,

@@ -321,6 +321,9 @@ export async function mockInvoke<T>(command: string, args: Record<string, unknow
         }
         return [...groups.values()].sort((a, b) => b.events - a.events).slice(0, args.limit as number);
       }
+      case "run_detections":
+        // shortcut: la démonstration ne calcule pas de détection ; le moteur Rust fait foi.
+        return [];
       case "events_count":
         return demoFiltered(args).length;
       case "events_window": {

@@ -253,6 +253,51 @@ pub fn event_groups(
     })
 }
 
+/// Miroir TypeScript : `Detection` dans `apps/desktop/src/api.ts`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DetectionDto {
+    pub rule_id: &'static str,
+    pub rule_version: u32,
+    pub title: &'static str,
+    pub description: &'static str,
+    /// "low", "medium", "high" ou "critical".
+    pub severity: &'static str,
+    pub source_ip: String,
+    /// Microsecondes Unix UTC.
+    pub first_us: i64,
+    pub last_us: i64,
+    pub events: u64,
+    pub peak: u64,
+    pub event_ids: Vec<i64>,
+}
+
+/// Applique les règles de détection fournies aux événements d'une enquête.
+#[tauri::command(async)]
+pub fn run_detections(
+    state: tauri::State<'_, AppState>,
+    investigation_id: i64,
+) -> Result<Vec<DetectionDto>, CommandError> {
+    state.with_storage(|s| {
+        Ok(s.detect(InvestigationId::new(investigation_id))?
+            .into_iter()
+            .map(|d| DetectionDto {
+                rule_id: d.rule.id,
+                rule_version: d.rule.version,
+                title: d.rule.title,
+                description: d.rule.description,
+                severity: d.rule.severity.as_str(),
+                source_ip: d.source_ip,
+                first_us: d.first_us,
+                last_us: d.last_us,
+                events: d.events,
+                peak: d.peak,
+                event_ids: d.event_ids,
+            })
+            .collect())
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
