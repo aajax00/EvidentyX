@@ -32,9 +32,9 @@ Logo source en pleine résolution : `docs/assets/logo.png` (fond transparent). F
 
 Composants `BrandLogo` et `BrandMark` : `src/shell/BrandLogo.tsx`. Les icônes de l'application (`src-tauri/icons/`) sont générées par `npx tauri icon src-tauri/icons/source.png` à partir du logo posé sur un carreau bleu nuit.
 
-Les icônes de l'application posent le logo sur un **fond clair** (bleu très pâle), pour qu'il se distingue dans la barre des tâches et le dock sombres.
+Les icônes de l'application posent le logo sur un **carreau clair aux coins arrondis, en relief** (dégradé, biseau, ombre portée ; logo avec ombre et reflet), pour qu'il se distingue dans la barre des tâches et le dock sombres. Le carreau est produit par `python3 scripts/generate-app-icon.py` (dans `apps/desktop`, Pillow) qui écrit `src-tauri/icons/source.png`, puis les tailles par `npx tauri icon`. L'icône est intégrée au binaire : après un changement, recompiler l'application.
 
-**Icône dans la barre des tâches (Linux)** : le bureau associe la fenêtre (identifiant `evidentyx-desktop`, nom du binaire) à un fichier `evidentyx-desktop.desktop`. Les paquets `.deb` et `.rpm` l'installent. Pour l'application lancée depuis les sources, `scripts/raccourci-linux.sh` le crée dans `~/.local/share/applications` (à relancer si le dépôt change de place).
+**Icône dans la barre des tâches (Linux)** : le bureau associe la fenêtre (identifiant `evidentyx-desktop`, nom du binaire) à un fichier `evidentyx-desktop.desktop`. Les paquets `.deb` et `.rpm` l'installent. Pour l'application lancée depuis les sources, `scripts/raccourci-linux.sh` le crée dans `~/.local/share/applications`, avec une copie de l'icône dont le nom contient son empreinte (le bureau ne peut pas resservir une ancienne image). À relancer après un changement d'icône ou si le dépôt change de place.
 
 ## Thème
 
