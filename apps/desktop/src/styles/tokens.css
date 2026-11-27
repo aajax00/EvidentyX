@@ -14,6 +14,8 @@
   /* Surfaces, du plus profond au plus élevé */
   --color-bg: #0b0f16;
   --color-surface: #111620;
+  /* Panneaux posés sur la grille de fond : très légère transparence */
+  --color-surface-alpha: rgb(17 22 32 / 0.92);
   --color-surface-raised: #171d29;
   --color-surface-hover: #1d2533;
   --color-surface-sunken: #0d121a;

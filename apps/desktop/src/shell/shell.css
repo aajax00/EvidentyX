@@ -1,10 +1,28 @@
 /* Coque applicative : [barre latérale | (en-tête + contenu)] puis barre d'état. */
 
 .shell {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+}
+
+/* Fond animé : canevas fixe sur toute la fenêtre, derrière la coque (comme la maquette) */
+.shell-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.shell-body,
+.shell-statusbar {
+  position: relative;
+  z-index: 1;
 }
 
 .shell-body {
@@ -25,15 +43,6 @@
   position: relative;
   flex: 1;
   min-height: 0;
-  background: var(--color-bg);
-}
-
-.shell-stage__background {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
 }
 
 .shell-content {
@@ -48,7 +57,7 @@
   display: flex;
   flex-direction: column;
   flex: none;
-  width: 228px;
+  width: 236px;
   background: var(--color-surface);
   border-right: var(--border-width) solid var(--color-border);
   transition: width var(--duration-normal) var(--ease-standard);
@@ -62,12 +71,18 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  height: 56px;
+  gap: 10px;
+  width: 100%;
+  height: 46px;
   padding: 0 var(--space-3);
+  background: var(--color-surface-sunken);
+  border: 0;
   border-bottom: var(--border-width) solid var(--color-border);
+  color: var(--color-text);
+  text-align: left;
   flex: none;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .shell-sidebar--collapsed .shell-sidebar__brand {
@@ -76,28 +91,40 @@
 }
 
 .shell-sidebar__logo {
-  width: 58px;
+  width: 52px;
   flex: none;
 }
 
+.shell-sidebar--collapsed .shell-sidebar__logo {
+  width: 36px;
+}
+
 .shell-sidebar__wordmark {
+  font-size: 14px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+}
+
+/* Le X de la marque, en bleu */
+.shell-sidebar__x {
+  color: var(--color-accent);
+}
+
+.shell-sidebar__footer {
   display: flex;
   flex-direction: column;
-  min-width: 0;
-  line-height: 1.2;
-}
-
-.shell-sidebar__name {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-bold);
-  letter-spacing: 0.18em;
-  white-space: nowrap;
-}
-
-.shell-sidebar__tag {
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  flex: none;
+  background: var(--color-surface-sunken);
+  border-top: var(--border-width) solid var(--color-border);
   font-size: var(--text-2xs);
+  color: var(--color-text-muted);
+}
+
+.shell-sidebar__footer span {
   color: var(--color-text-subtle);
-  white-space: nowrap;
 }
 
 /* ——— Logo ——— */
@@ -144,12 +171,14 @@
   gap: var(--space-2);
   width: 100%;
   height: 30px;
-  padding: 0 var(--space-3) 0 calc(var(--space-3) + 1px);
+  padding: 0 var(--space-3);
   background: transparent;
   border: 0;
+  border-left: 2px solid transparent;
   border-radius: var(--radius);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
   text-align: left;
   white-space: nowrap;
   cursor: pointer;
@@ -161,7 +190,7 @@
 }
 
 button.shell-nav-item:hover {
-  background: var(--color-surface-raised);
+  background: var(--color-surface-hover);
   color: var(--color-text);
 }
 
@@ -169,17 +198,19 @@ button.shell-nav-item:hover {
 .shell-nav-item--active,
 button.shell-nav-item--active:hover {
   background: var(--color-accent-subtle);
+  border-left-color: var(--color-accent);
   color: var(--color-text);
+  font-weight: var(--weight-semibold);
 }
 
-.shell-nav-item--active::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--color-accent);
+/* Compteur à droite du libellé */
+.shell-nav-item__count {
+  padding: 1px 5px;
+  background: var(--color-surface-sunken);
+  border: var(--border-width) solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 10px;
+  line-height: 1.25;
 }
 
 .shell-nav-item--active svg {
@@ -210,51 +241,51 @@ button.shell-nav-item--active:hover {
   letter-spacing: var(--tracking-caps);
 }
 
-.shell-sidebar__toggle {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  height: 36px;
-  padding: 0 var(--space-3) 0 calc(var(--space-3) + 1px);
-  flex: none;
-  background: transparent;
-  border: 0;
-  border-top: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius);
-  color: var(--color-text-subtle);
-  font-size: var(--text-xs);
-  cursor: pointer;
-}
-
-.shell-sidebar--collapsed .shell-sidebar__toggle {
-  justify-content: center;
-  padding: 0;
-}
-
-.shell-sidebar__toggle:hover {
-  background: var(--color-surface-raised);
-  color: var(--color-text);
-}
-
 /* ——— En-tête ——— */
 
 .shell-header {
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  height: 56px;
-  padding: 0 var(--space-5);
+  gap: var(--space-2);
+  height: 46px;
+  padding: 0 var(--space-3);
   flex: none;
   background: var(--color-surface);
   border-bottom: var(--border-width) solid var(--color-border);
 }
 
+.shell-header__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  padding: 0;
+  background: transparent;
+  border: var(--border-width) solid transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.shell-header__icon:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
 .shell-breadcrumb {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: 6px;
   min-width: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.shell-breadcrumb__root {
+  white-space: nowrap;
 }
 
 .shell-breadcrumb__link {
@@ -264,14 +295,13 @@ button.shell-nav-item--active:hover {
   border: 0;
   border-radius: var(--radius);
   color: var(--color-text-muted);
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   cursor: pointer;
   white-space: nowrap;
 }
 
 .shell-breadcrumb__link:hover {
-  color: var(--color-text);
-  background: var(--color-surface-raised);
+  color: var(--color-accent);
 }
 
 .shell-breadcrumb__sep {
@@ -280,26 +310,58 @@ button.shell-nav-item--active:hover {
 }
 
 .shell-breadcrumb__current {
-  font-size: var(--text-lg);
+  font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
+  color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.shell-header__context {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 320px;
+  height: 26px;
+  margin-left: auto;
+  padding: 0 var(--space-2);
+  background: var(--color-surface-sunken);
+  border: var(--border-width) solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.shell-header__context:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.shell-header__context-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-accent);
+}
+
+.shell-header__context + .shell-header__palette {
+  margin-left: 0;
 }
 
 .shell-header__palette {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  width: min(360px, 40%);
-  height: 28px;
+  flex: none;
+  height: 26px;
   margin-left: auto;
   padding: 0 var(--space-2);
   background: var(--color-surface-sunken);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius);
-  color: var(--color-text-subtle);
-  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
   cursor: pointer;
 }
 
@@ -331,53 +393,45 @@ button.shell-nav-item--active:hover {
   flex: none;
 }
 
-/* ——— Barre d'état ——— */
+/* ——— Barre d'état : texte seul, anomalies colorées ——— */
 
 .shell-statusbar {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  justify-content: space-between;
+  gap: var(--space-3);
   height: 24px;
   padding: 0 var(--space-3);
   flex: none;
   background: var(--color-surface);
   border-top: var(--border-width) solid var(--color-border);
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   color: var(--color-text-subtle);
 }
 
-.shell-statusbar__spacer {
-  flex: 1;
+.shell-statusbar__group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
 }
 
 .shell-statusbar__item {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
   white-space: nowrap;
 }
 
-.shell-statusbar__dot {
-  width: 6px;
-  height: 6px;
-  background: var(--color-text-subtle);
+.shell-statusbar__sep {
+  width: 1px;
+  height: 12px;
+  background: var(--color-border);
 }
 
-.shell-statusbar__item--success .shell-statusbar__dot {
-  background: var(--color-success);
-}
-
-.shell-statusbar__item--warning .shell-statusbar__dot {
-  background: var(--color-warning);
+.shell-statusbar__item--warning {
+  color: var(--color-warning);
 }
 
 .shell-statusbar__item--danger {
   color: var(--color-danger);
-}
-
-.shell-statusbar__item--danger .shell-statusbar__dot {
-  background: var(--color-danger);
 }
 
 /* ——— Touches de raccourci ——— */
@@ -534,7 +588,7 @@ button.shell-nav-item--active:hover {
 /* Contour de focus tracé à l'intérieur des éléments placés dans une zone
    défilante (sinon il est rogné par le bord de la zone) */
 .shell-nav-item:focus-visible,
-.shell-sidebar__toggle:focus-visible,
+.shell-sidebar__brand:focus-visible,
 .shell-palette__item:focus-visible {
   outline-offset: -2px;
 }

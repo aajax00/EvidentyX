@@ -3,12 +3,16 @@ import { getStorageInfo, isDemoMode, type StorageInfo } from "../api";
 import { useEngine } from "../engine";
 import { useInvestigations } from "../investigations/InvestigationsProvider";
 
-/** Barre d'état : moteur, base de données, nombre d'enquêtes. */
+const pad = (n: number) => String(n).padStart(2, "0");
+const utcClock = (d: Date) => `UTC ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
+
+/** Barre d'état : version, base locale, nombre d'enquêtes, horloge UTC. Les anomalies seules sont colorées. */
 export function StatusBar() {
   const engine = useEngine();
   const { all, revision } = useInvestigations();
   const [storage, setStorage] = useState<StorageInfo | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
+  const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
     getStorageInfo()
@@ -19,41 +23,48 @@ export function StatusBar() {
       .catch((e: { message?: string }) => setStorageError(e.message ?? String(e)));
   }, [revision]);
 
-  const engineItem =
-    engine.kind === "ready"
-      ? { tone: "success", text: `Moteur ${engine.info.engineVersion}`, title: `Plateforme : ${engine.info.platform}` }
-      : engine.kind === "loading"
-        ? { tone: "neutral", text: "Moteur : connexion…", title: undefined }
-        : { tone: isDemoMode() ? "warning" : "danger", text: "Moteur indisponible", title: engine.reason };
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(t);
+  }, []);
 
-  const storageItem = storageError
-    ? { tone: "danger", text: "Base indisponible", title: storageError }
-    : storage
-      ? {
-          tone: isDemoMode() ? "warning" : "success",
-          text: isDemoMode() ? "Données de démonstration" : `Base locale · schéma ${storage.schemaVersion ?? "?"}`,
-          title: storage.path,
-        }
-      : { tone: "neutral", text: "Base : ouverture…", title: undefined };
+  const engineText =
+    engine.kind === "ready"
+      ? `EVIDENTYX v${engine.info.appVersion} · moteur ${engine.info.engineVersion}`
+      : engine.kind === "loading"
+        ? "Moteur : connexion…"
+        : "Moteur indisponible";
+
+  const storageText = storageError
+    ? "Base indisponible"
+    : isDemoMode()
+      ? "Données de démonstration (mémoire du navigateur)"
+      : storage
+        ? `Base SQLite locale · schéma ${storage.schemaVersion ?? "?"} · ${all.length} enquête${all.length > 1 ? "s" : ""}`
+        : "Base : ouverture…";
 
   return (
     <footer className="shell-statusbar">
-      <StatusItem {...engineItem} />
-      <StatusItem {...storageItem} />
-      <span className="shell-statusbar__spacer" />
-      <span className="shell-statusbar__item">
-        {all.length} enquête{all.length > 1 ? "s" : ""}
-      </span>
-      <span className="shell-statusbar__item shell-statusbar__item--secondary">Hors ligne · aucune télémétrie</span>
+      <div className="shell-statusbar__group">
+        <span
+          className={`shell-statusbar__item mono${engine.kind === "unavailable" && !isDemoMode() ? " shell-statusbar__item--danger" : ""}`}
+          title={engine.kind === "ready" ? `Plateforme : ${engine.info.platform}` : engine.kind === "unavailable" ? engine.reason : undefined}
+        >
+          {engineText}
+        </span>
+        <span className="shell-statusbar__sep" aria-hidden="true" />
+        <span
+          className={`shell-statusbar__item mono${storageError ? " shell-statusbar__item--danger" : isDemoMode() ? " shell-statusbar__item--warning" : ""}`}
+          title={storageError ?? storage?.path}
+        >
+          {storageText}
+        </span>
+      </div>
+      <div className="shell-statusbar__group">
+        <span className="shell-statusbar__item shell-statusbar__item--secondary">Hors ligne · aucune télémétrie</span>
+        <span className="shell-statusbar__sep shell-statusbar__item--secondary" aria-hidden="true" />
+        <span className="shell-statusbar__item mono">{utcClock(now)}</span>
+      </div>
     </footer>
-  );
-}
-
-function StatusItem({ tone, text, title }: { tone: string; text: string; title: string | undefined }) {
-  return (
-    <span className={`shell-statusbar__item shell-statusbar__item--${tone}`} title={title}>
-      <span className="shell-statusbar__dot" aria-hidden="true" />
-      {text}
-    </span>
   );
 }

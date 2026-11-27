@@ -87,6 +87,72 @@ pub fn overview(storage: &Storage, investigation_id: i64) -> Result<OverviewDto,
     })
 }
 
+/// Miroir TypeScript : `Dashboard` dans `apps/desktop/src/api.ts`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DashboardDto {
+    pub figures: Vec<FiguresDto>,
+    pub recent_evidence: Vec<RecentEvidenceDto>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FiguresDto {
+    pub investigation_id: i64,
+    pub evidence: u64,
+    pub evidence_intact: u64,
+    pub evidence_analyzed: u64,
+    pub events: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecentEvidenceDto {
+    pub evidence_id: i64,
+    pub investigation_id: i64,
+    pub investigation_name: String,
+    pub file_name: String,
+    pub size_bytes: u64,
+    pub integrity: String,
+    /// Millisecondes Unix UTC.
+    pub added_at: i64,
+}
+
+pub fn dashboard(storage: &Storage) -> Result<DashboardDto, CommandError> {
+    Ok(DashboardDto {
+        figures: storage
+            .investigation_figures()?
+            .into_iter()
+            .map(|(id, f)| FiguresDto {
+                investigation_id: id.get(),
+                evidence: f.evidence,
+                evidence_intact: f.evidence_intact,
+                evidence_analyzed: f.evidence_analyzed,
+                events: f.events,
+            })
+            .collect(),
+        recent_evidence: storage
+            .recent_evidence(8)?
+            .into_iter()
+            .map(|r| RecentEvidenceDto {
+                evidence_id: r.evidence_id,
+                investigation_id: r.investigation_id,
+                investigation_name: r.investigation_name,
+                file_name: r.file_name,
+                size_bytes: r.size_bytes,
+                integrity: r.integrity,
+                added_at: r.added_at,
+            })
+            .collect(),
+    })
+}
+
+/// Chiffres du tableau de bord : par enquête et dernières preuves ajoutées.
+#[tauri::command(async)]
+pub fn get_dashboard(state: tauri::State<'_, AppState>) -> Result<DashboardDto, CommandError> {
+    state.with_storage(|s| dashboard(s))
+}
+
 // Hors du fil de la fenêtre : calcul long sur une grosse enquête.
 #[tauri::command(async)]
 pub fn investigation_overview(

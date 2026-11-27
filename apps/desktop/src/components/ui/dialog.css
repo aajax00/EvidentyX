@@ -17,7 +17,7 @@
 }
 
 .ui-dialog::backdrop {
-  background: rgb(4 6 10 / 0.62);
+  background: rgb(11 15 22 / 0.72);
 }
 
 .ui-dialog__surface {
@@ -30,16 +30,18 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-3) var(--space-1) var(--space-4);
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+  background: var(--color-surface-raised);
+  border-bottom: var(--border-width) solid var(--color-border);
 }
 
 .ui-dialog__title {
-  font-size: var(--text-lg);
+  font-size: var(--text-md);
   font-weight: var(--weight-semibold);
 }
 
 .ui-dialog__description {
-  padding: 0 var(--space-4);
+  padding: var(--space-3) var(--space-4) 0;
   color: var(--color-text-muted);
   font-size: var(--text-sm);
 }

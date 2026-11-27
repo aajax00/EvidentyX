@@ -29,7 +29,7 @@
 /* Secondaire : surface élevée, bordure fine */
 .ui-button--secondary:hover:not(:disabled) {
   background: var(--color-surface-hover);
-  border-color: var(--color-border-strong);
+  border-color: var(--color-accent);
 }
 
 /* Principal : bleu du logo */
@@ -48,8 +48,12 @@
   background: transparent;
   border-color: transparent;
 }
+.ui-button--ghost {
+  color: var(--color-text-muted);
+}
 .ui-button--ghost:hover:not(:disabled) {
-  background: var(--color-surface-raised);
+  background: var(--color-surface-hover);
+  color: var(--color-text);
 }
 
 /* Destructif : texte et bordure rouges, fond teinté au survol */

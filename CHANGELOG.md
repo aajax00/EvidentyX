@@ -8,6 +8,19 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ### Ajouté
 
+- Guide d'utilisation intégré (barre latérale, « Guide ») : enquêtes, preuves et intégrité, analyse, chronologie (filtres, fuseau, heure incertaine), regroupements et pivots, graphe (formes, types de liens, manipulation, inspecteur, situations courantes et limites), raccourcis, confidentialité ; lien « Lire le guide du graphe » depuis le graphe.
+
+### Modifié
+
+- Interface au style « poste d'analyse forensique » (repris de la maquette EvidentyX) : marque « Evidenty**X** » dans un bandeau, navigation à liseré avec compteur d'enquêtes, en-tête avec repli de la barre latérale, fil d'Ariane et accès à la dernière enquête, panneaux à bandeau d'en-tête, étiquettes en capitales mono, notifications à liseré et barre de décompte, chargeur « X », grille de fond animée identique à la maquette, barre d'état avec version et horloge UTC. Écran d'ouverture inchangé.
+- Tableau de bord : chiffres réels (enquêtes, preuves intègres et analysées, événements, dernière activité), tableau des enquêtes avec preuves et événements, preuves récentes, feuille de route ; commande `get_dashboard`.
+- Marque « EVIDENTYX » en capitales avec le logo complet ; icône de l'application sur carreau clair aux coins arrondis et en relief (`apps/desktop/scripts/generate-app-icon.py`) ; pages en pleine largeur.
+- Graphe lisible : types de liens nommés (connexion, depuis, vue par), aide au-dessus du graphe, relations décrites en phrases dans l'inspecteur, clés de lecture (plusieurs comptes depuis une adresse, nombreuses destinations…), « Isoler ses relations ».
+- Graphe des entités sur canevas comme la maquette : zoom à la molette, déplacement, entités déplaçables, barre de zoom, légende, inspecteur (relations, événements, copie), isolation animée des voisins ; filtres par type d'entité.
+- Linux : `scripts/raccourci-linux.sh` affiche le logo dans la barre des tâches pour l'application lancée depuis les sources.
+
+### Ajouté
+
 - Graphe des entités dans la chronologie (vue « Graphe ») : adresses IP, utilisateurs et hôtes reliés par les événements qui les citent ensemble, épaisseur selon le nombre d'événements, dans les filtres en cours ; survol pour isoler une entité et ses voisines ; clic ou Entrée sur une entité pour afficher ses événements ; commande `entity_links`. Sections « Chronologie » et « Graphe » retirées des modules planifiés.
 - Corrélation dans la chronologie : vue « Regroupements » par adresse IP (source ou destination), utilisateur, hôte ou flux réseau (source → destination:port), avec nombre d'événements, échecs, premier et dernier ; pivot en un clic depuis un groupe ou depuis le détail d'un événement (adresse, utilisateur, hôte, « Événements du même flux ») ; filtre d'adresse exact pour une adresse complète, par début sinon ; commande `event_groups`.
 - Heures de la chronologie : fuseau d'affichage au choix (heure locale ou UTC, depuis la chronologie ou les Paramètres, enregistré) ; heure incertaine (fuseau supposé, année déduite) signalée par « ≈ » et expliquée dans le détail ; précision de l'heure affichée (jour, seconde, milliseconde, microseconde, fraction comprise) ; filtre « Heure : incertaine / absente » ; période des filtres saisie dans le fuseau d'affichage.

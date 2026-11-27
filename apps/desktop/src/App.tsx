@@ -5,6 +5,7 @@ import { SplashScreen } from "./motion/SplashScreen";
 import { useReducedMotion } from "./motion/useReducedMotion";
 import { InvestigationsProvider } from "./investigations/InvestigationsProvider";
 import { AboutPage } from "./pages/AboutPage";
+import { GuidePage } from "./pages/GuidePage";
 import { HomePage } from "./pages/HomePage";
 import { InvestigationPage } from "./pages/InvestigationPage";
 import { InvestigationsPage } from "./pages/InvestigationsPage";
@@ -90,6 +91,8 @@ function CurrentPage() {
       return <TimelinePage key={route.id} id={route.id} />;
     case "settings":
       return <SettingsPage />;
+    case "guide":
+      return <GuidePage anchor={route.anchor} />;
     case "about":
       return <AboutPage />;
   }

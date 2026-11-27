@@ -11,6 +11,7 @@ import type {
   Investigation,
   InvestigationQuery,
   Overview,
+  Dashboard,
   ProgressHandler,
   Settings,
   StorageInfo,
@@ -326,6 +327,31 @@ export async function mockInvoke<T>(command: string, args: Record<string, unknow
         const offset = args.offset as number;
         return demoFiltered(args).slice(offset, offset + (args.limit as number));
       }
+      case "get_dashboard":
+        return {
+          figures: investigations.map((i) => {
+            const list = evidence.filter((e) => e.investigationId === i.id);
+            return {
+              investigationId: i.id,
+              evidence: list.length,
+              evidenceIntact: list.filter((e) => e.integrity === "intact").length,
+              evidenceAnalyzed: list.filter((e) => e.eventCount > 0).length,
+              events: list.reduce((a, e) => a + e.eventCount, 0),
+            };
+          }),
+          recentEvidence: [...evidence]
+            .sort((a, b) => b.addedAt - a.addedAt)
+            .slice(0, 8)
+            .map((e) => ({
+              evidenceId: e.id,
+              investigationId: e.investigationId,
+              investigationName: investigations.find((i) => i.id === e.investigationId)?.name ?? "",
+              fileName: e.fileName,
+              sizeBytes: e.sizeBytes,
+              integrity: e.integrity,
+              addedAt: e.addedAt,
+            })),
+        } satisfies Dashboard;
       case "investigation_overview": {
         find(args.investigationId);
         const list = evidence.filter((e) => e.investigationId === args.investigationId);

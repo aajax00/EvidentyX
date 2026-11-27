@@ -96,10 +96,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="shell">
+      {animatedBackground && <NetworkBackground className="shell-background" />}
       <div className="shell-body">
-        <Sidebar collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
+        <Sidebar collapsed={collapsed} />
         <div className="shell-main">
-          <Header onOpenPalette={() => setPaletteOpen(true)} />
+          <Header onOpenPalette={() => setPaletteOpen(true)} collapsed={collapsed} onToggleSidebar={toggleCollapsed} />
           {isDemoMode() && (
             <p className="shell-demo-banner" role="note">
               <FlaskConical size={14} aria-hidden="true" />
@@ -108,7 +109,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             </p>
           )}
           <div className="shell-stage">
-            {animatedBackground && <NetworkBackground className="shell-stage__background" />}
             <main className="shell-content">{children}</main>
           </div>
         </div>

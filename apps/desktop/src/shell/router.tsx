@@ -8,6 +8,7 @@ export type Route =
   | { page: "investigation"; id: number }
   | { page: "timeline"; id: number }
   | { page: "settings" }
+  | { page: "guide"; anchor?: string | undefined }
   | { page: "about" };
 
 export type PageId = Route["page"];

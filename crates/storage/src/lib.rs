@@ -18,8 +18,8 @@ mod settings;
 pub use clock::{Clock, SystemClock};
 pub use error::{Result, StorageError};
 pub use events::{
-    EntityLink, EventFilter, EventPage, FlowKey, Group, GroupBy, InsertReport, Overview,
-    TimeQuality,
+    EntityLink, EventFilter, EventPage, FlowKey, Group, GroupBy, InsertReport,
+    InvestigationFigures, Overview, RecentEvidence, TimeQuality,
 };
 pub use evidence::NewEvidence;
 pub use migrations::LATEST_SCHEMA_VERSION;
