@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getEntityLinks, toCommandError, type EntityKind, type EntityLink, type EventFilter } from "../api";
 import type { Pivot } from "./GroupsView";
+import { useRouter } from "../shell/router";
 import { Button, Spinner, useToast } from "../components/ui";
 
 /** Liens affichés au plus (les plus fréquents). */
@@ -147,6 +148,7 @@ export function EntityGraph({
   onPivot: (p: Pivot) => void;
 }) {
   const { notify } = useToast();
+  const { navigate } = useRouter();
   const [links, setLinks] = useState<EntityLink[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [kinds, setKinds] = useState<Record<EntityKind, boolean>>({ ip: true, user: true, host: true });
@@ -472,7 +474,10 @@ export function EntityGraph({
         <span className="graph-help__user">carré ambre</span> = compte utilisateur. Un trait relie deux entités citées dans
         les mêmes événements, avec leur nombre : <strong>connexion</strong> (adresse source → adresse destination),{" "}
         <strong>depuis</strong> (compte → adresse d'où il a été utilisé), <strong>vue par</strong> (adresse → hôte qui
-        l'a journalisée). C'est un relevé des journaux, pas une conclusion.
+        l'a journalisée). C'est un relevé des journaux, pas une conclusion.{" "}
+        <button type="button" className="graph-help__link" onClick={() => navigate({ page: "guide", anchor: "guide-graphe" })}>
+          Lire le guide du graphe
+        </button>
       </p>
       <div className="graph-toolbar">
         <div className="graph-toolbar__group">

@@ -3,6 +3,7 @@
 // et le dit explicitement (règle du projet : aucune page factice).
 
 import {
+  BookOpen,
   FileText,
   FolderSearch,
   House,
@@ -59,6 +60,7 @@ export const NAVIGATION: readonly NavGroup[] = [
     label: "Système",
     items: [
       { kind: "page", page: "settings", label: "Paramètres", icon: Settings },
+      { kind: "page", page: "guide", label: "Guide", icon: BookOpen },
       { kind: "page", page: "about", label: "À propos", icon: Info },
     ],
   },
@@ -69,6 +71,7 @@ export const SECTION_TITLES: Record<SectionId, string> = {
   home: "Tableau de bord",
   investigations: "Enquêtes",
   settings: "Paramètres",
+  guide: "Guide d'utilisation",
   about: "À propos",
 };
 

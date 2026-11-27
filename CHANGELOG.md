@@ -6,6 +6,10 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ## [Non publié]
 
+### Ajouté
+
+- Guide d'utilisation intégré (barre latérale, « Guide ») : enquêtes, preuves et intégrité, analyse, chronologie (filtres, fuseau, heure incertaine), regroupements et pivots, graphe (formes, types de liens, manipulation, inspecteur, situations courantes et limites), raccourcis, confidentialité ; lien « Lire le guide du graphe » depuis le graphe.
+
 ### Modifié
 
 - Interface au style « poste d'analyse forensique » (repris de la maquette EvidentyX) : marque « Evidenty**X** » dans un bandeau, navigation à liseré avec compteur d'enquêtes, en-tête avec repli de la barre latérale, fil d'Ariane et accès à la dernière enquête, panneaux à bandeau d'en-tête, étiquettes en capitales mono, notifications à liseré et barre de décompte, chargeur « X », grille de fond animée identique à la maquette, barre d'état avec version et horloge UTC. Écran d'ouverture inchangé.

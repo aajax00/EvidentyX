@@ -627,6 +627,16 @@ button.groups__row:hover {
   font-weight: var(--weight-semibold);
 }
 
+.graph-help__link {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--color-accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .graph-help__ip {
   color: var(--color-danger);
 }
