@@ -13,11 +13,13 @@
   display: flex;
   align-items: flex-start;
   gap: var(--space-2);
-  width: 340px;
-  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  position: relative;
+  overflow: hidden;
+  width: min(370px, calc(100vw - 32px));
+  padding: 10px 10px 13px 12px;
   background: var(--color-surface-raised);
   border: var(--border-width) solid var(--color-border-strong);
-  border-left-width: 2px;
+  border-left: 4px solid var(--color-accent);
   box-shadow: var(--shadow-pop);
   font-size: var(--text-sm);
   pointer-events: auto;
@@ -61,9 +63,34 @@
   color: var(--color-text);
 }
 
+/* Décompte avant fermeture (5 s, même durée que le minuteur) */
+.ui-toast__progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 2px;
+  transform-origin: left center;
+  animation: ui-toast-countdown 5s linear forwards;
+}
+
+.ui-toast--success .ui-toast__progress {
+  background: var(--color-success);
+}
+
+.ui-toast--danger .ui-toast__progress {
+  background: var(--color-danger);
+}
+
+@keyframes ui-toast-countdown {
+  to {
+    transform: scaleX(0);
+  }
+}
+
 @keyframes ui-toast-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateX(18px);
   }
 }

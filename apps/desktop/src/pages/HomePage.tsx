@@ -1,8 +1,7 @@
-import { Archive, ArrowRight, FolderOpen, FolderSearch, Layers, Plus } from "lucide-react";
+import { ArrowRight, FolderSearch, Plus } from "lucide-react";
 import { Badge, Button, EmptyState, Panel, Spinner } from "../components/ui";
 import { formatRelative } from "../format";
 import { useInvestigations } from "../investigations/InvestigationsProvider";
-import { BrandLogo } from "../shell/BrandLogo";
 import { useRouter } from "../shell/router";
 
 type PhaseState = "terminée" | "prochaine" | "planifiée";
@@ -23,42 +22,43 @@ export function HomePage() {
   const active = all.filter((i) => i.status === "active");
   const recent = active.slice(0, 6);
 
-  const stats = [
-    { label: "Enquêtes actives", value: active.length, icon: FolderOpen },
-    { label: "Archivées", value: all.length - active.length, icon: Archive },
-    { label: "Total", value: all.length, icon: Layers },
+  const archived = all.length - active.length;
+  const latest = all.reduce<number | null>((t, i) => (t === null || i.updatedAt > t ? i.updatedAt : t), null);
+  const dash = loading ? "—" : null;
+
+  const kpis = [
+    { label: "Enquêtes actives", value: dash ?? String(active.length), total: dash ? null : all.length, sub: "En cours d'analyse" },
+    { label: "Archivées", value: dash ?? String(archived), total: null, sub: "En lecture seule" },
+    { label: "Total", value: dash ?? String(all.length), total: null, sub: "Dans la base locale" },
+    { label: "Dernière activité", value: dash ?? (latest === null ? "—" : formatRelative(latest)), total: null, sub: "Modification d'une enquête" },
   ];
 
   return (
     <div className="page">
-      <section className="hero">
-        <BrandLogo className="hero__logo" />
-        <div className="hero__body">
-          <p className="hero__eyebrow">Plateforme d'investigation numérique</p>
-          <h2 className="hero__title">Chaque trace. Chaque connexion. Chaque vérité.</h2>
-          <p className="hero__text">
-            Transformez des preuves numériques fragmentées en enquêtes structurées, chronologiques et explicables —
-            entièrement hors ligne.
-          </p>
-          <div className="hero__actions">
-            <Button variant="primary" icon={Plus} onClick={openCreate}>
-              Nouvelle enquête
-            </Button>
-            <Button icon={FolderSearch} onClick={() => navigate({ page: "investigations" })}>
-              Voir les enquêtes
-            </Button>
-          </div>
+      <header className="page-header">
+        <div>
+          <h2 className="page-header__title">Tableau de bord</h2>
+          <p className="page-header__desc">Synthèse des enquêtes en cours et de l'avancement du projet. Tout reste sur cette machine.</p>
         </div>
-      </section>
+        <div className="page-header__actions">
+          <Button icon={FolderSearch} onClick={() => navigate({ page: "investigations" })}>
+            Voir les enquêtes
+          </Button>
+          <Button variant="primary" icon={Plus} onClick={openCreate}>
+            Nouvelle enquête
+          </Button>
+        </div>
+      </header>
 
-      <div className="stat-grid" role="list" aria-label="Statistiques">
-        {stats.map((s) => (
-          <div key={s.label} className="stat" role="listitem">
-            <s.icon size={18} aria-hidden="true" className="stat__icon" />
-            <span className="stat__text">
-              <span className="stat__value mono">{loading ? "—" : s.value}</span>
-              <span className="stat__label">{s.label}</span>
+      <div className="kpi-grid" role="list" aria-label="Chiffres clés">
+        {kpis.map((k) => (
+          <div key={k.label} className="kpi-card" role="listitem">
+            <span className="section-title">{k.label}</span>
+            <span className="kpi-card__value mono">
+              {k.value}
+              {k.total !== null && <span className="kpi-card__total"> / {k.total}</span>}
             </span>
+            <span className="kpi-card__sub">{k.sub}</span>
           </div>
         ))}
       </div>

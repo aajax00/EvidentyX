@@ -7,9 +7,14 @@ export interface SpinnerProps {
   label?: string;
 }
 
+/** Chargeur « X » : anneau tournant autour du X bleu de la marque (seul élément circulaire de l'interface). */
 export function Spinner({ size = "md", label = "Chargement" }: SpinnerProps) {
   return (
     <span role="status" className={cx("ui-spinner", `ui-spinner--${size}`)}>
+      <span className="ui-spinner__ring" aria-hidden="true" />
+      <span className="ui-spinner__x" aria-hidden="true">
+        X
+      </span>
       <span className="sr-only">{label}</span>
     </span>
   );

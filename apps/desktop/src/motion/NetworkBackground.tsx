@@ -1,12 +1,15 @@
 import { useEffect, useRef } from "react";
 
-/** Densité : un point pour cette surface (px²), plafonnée. */
-const AREA_PER_NODE = 16000;
-const MAX_NODES = 110;
+/** Densité : un point pour cette surface (px²), entre 12 et 26 points. */
+const AREA_PER_NODE = 62000;
+const MIN_NODES = 12;
+const MAX_NODES = 26;
 /** Distance maximale d'un lien entre deux points (px). */
-const LINK_DISTANCE = 140;
+const LINK_DISTANCE = 170;
+/** Pas de la grille de coordonnées (px). */
+const GRID = 56;
 /** Vitesse de dérive (px par image à 30 images/s). */
-const SPEED = 0.18;
+const SPEED = 0.11;
 const FRAME_MS = 1000 / 30;
 
 interface Node {
@@ -14,13 +17,12 @@ interface Node {
   y: number;
   vx: number;
   vy: number;
-  /** Phase de pulsation, pour quelques points plus lumineux. */
-  phase: number;
 }
 
 /**
- * Animation d'arrière-plan : des points carrés dérivent lentement et se relient
- * quand ils se rapprochent, comme un graphe d'entités en cours de construction.
+ * Animation d'arrière-plan « forensique » : grille de coordonnées très discrète
+ * et quelques points carrés qui dérivent lentement, reliés en équerre quand ils
+ * se rapprochent.
  * Purement décorative (aria-hidden), en pause quand la fenêtre est masquée.
  * Le parent décide de l'afficher (réglage utilisateur, réduction des animations).
  */
@@ -47,7 +49,7 @@ export function NetworkBackground({ className }: { className?: string }) {
       canvas.width = Math.max(1, Math.round(width * dpr));
       canvas.height = Math.max(1, Math.round(height * dpr));
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const count = Math.min(MAX_NODES, Math.round((width * height) / AREA_PER_NODE));
+      const count = Math.min(MAX_NODES, Math.max(MIN_NODES, Math.round((width * height) / AREA_PER_NODE)));
       // Conserve les points existants pour éviter un saut visuel au redimensionnement.
       nodes = nodes.filter((n) => n.x <= width && n.y <= height).slice(0, count);
       while (nodes.length < count) {
@@ -57,7 +59,6 @@ export function NetworkBackground({ className }: { className?: string }) {
           y: Math.random() * height,
           vx: Math.cos(angle) * SPEED * (0.4 + Math.random()),
           vy: Math.sin(angle) * SPEED * (0.4 + Math.random()),
-          phase: Math.random() * Math.PI * 2,
         });
       }
     }
@@ -73,33 +74,41 @@ export function NetworkBackground({ className }: { className?: string }) {
         n.y += n.vy;
         if (n.x < 0 || n.x > width) n.vx *= -1;
         if (n.y < 0 || n.y > height) n.vy *= -1;
-        n.phase += 0.02;
       }
 
       ctx.clearRect(0, 0, width, height);
       ctx.lineWidth = 1;
+
+      // Grille de coordonnées très discrète.
+      ctx.strokeStyle = "rgba(34, 43, 58, 0.22)";
+      ctx.beginPath();
+      for (let x = 0; x < width; x += GRID) {
+        ctx.moveTo(x + 0.5, 0);
+        ctx.lineTo(x + 0.5, height);
+      }
+      for (let y = 0; y < height; y += GRID) {
+        ctx.moveTo(0, y + 0.5);
+        ctx.lineTo(width, y + 0.5);
+      }
+      ctx.stroke();
+
+      // Liaisons orthogonales (en équerre) entre points proches.
       for (let i = 0; i < nodes.length; i++) {
         const a = nodes[i]!;
         for (let j = i + 1; j < nodes.length; j++) {
           const b = nodes[j]!;
-          const dx = a.x - b.x;
-          const dy = a.y - b.y;
-          const d2 = dx * dx + dy * dy;
-          if (d2 > LINK_DISTANCE * LINK_DISTANCE) continue;
-          const alpha = (1 - Math.sqrt(d2) / LINK_DISTANCE) * 0.2;
-          ctx.strokeStyle = `rgba(61, 143, 240, ${alpha})`;
+          const d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d > LINK_DISTANCE) continue;
+          ctx.strokeStyle = `rgba(61, 143, 240, ${((1 - d / LINK_DISTANCE) * 0.11).toFixed(3)})`;
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, a.y);
           ctx.lineTo(b.x, b.y);
           ctx.stroke();
         }
       }
-      for (const n of nodes) {
-        const glow = Math.max(0, Math.sin(n.phase)) ** 6;
-        ctx.fillStyle = `rgba(99, 166, 244, ${0.38 + glow * 0.5})`;
-        const size = 2 + glow;
-        ctx.fillRect(n.x - size / 2, n.y - size / 2, size, size);
-      }
+      ctx.fillStyle = "rgba(49, 60, 79, 0.55)";
+      for (const n of nodes) ctx.fillRect(n.x - 1.5, n.y - 1.5, 3, 3);
     }
 
     function start() {

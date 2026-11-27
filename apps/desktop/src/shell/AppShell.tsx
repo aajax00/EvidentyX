@@ -97,9 +97,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="shell">
       <div className="shell-body">
-        <Sidebar collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
+        <Sidebar collapsed={collapsed} />
         <div className="shell-main">
-          <Header onOpenPalette={() => setPaletteOpen(true)} />
+          <Header onOpenPalette={() => setPaletteOpen(true)} collapsed={collapsed} onToggleSidebar={toggleCollapsed} />
           {isDemoMode() && (
             <p className="shell-demo-banner" role="note">
               <FlaskConical size={14} aria-hidden="true" />

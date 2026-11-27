@@ -6,6 +6,11 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ## [Non publié]
 
+### Modifié
+
+- Interface au style « poste d'analyse forensique » (inspiré de la maquette EvidentyX) : marque « Evidenty**X** » dans un bandeau, navigation à liseré avec compteur d'enquêtes, en-tête avec repli de la barre latérale, fil d'Ariane et accès à la dernière enquête, panneaux à bandeau d'en-tête, étiquettes en capitales mono, tableau de bord avec en-tête de page et chiffres clés, notifications à liseré et barre de décompte, chargeur « X », grille de fond discrète, barre d'état avec version et horloge UTC. Écran d'ouverture inchangé.
+- Linux : `scripts/raccourci-linux.sh` affiche le logo dans la barre des tâches pour l'application lancée depuis les sources.
+
 ### Ajouté
 
 - Graphe des entités dans la chronologie (vue « Graphe ») : adresses IP, utilisateurs et hôtes reliés par les événements qui les citent ensemble, épaisseur selon le nombre d'événements, dans les filtres en cours ; survol pour isoler une entité et ses voisines ; clic ou Entrée sur une entité pour afficher ses événements ; commande `entity_links`. Sections « Chronologie » et « Graphe » retirées des modules planifiés.

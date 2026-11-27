@@ -50,6 +50,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               <button type="button" className="ui-toast__close" aria-label="Fermer la notification" onClick={() => dismiss(t.id)}>
                 <X size={13} aria-hidden="true" />
               </button>
+              <span className="ui-toast__progress" aria-hidden="true" />
             </div>
           );
         })}
