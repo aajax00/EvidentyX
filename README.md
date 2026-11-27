@@ -15,14 +15,14 @@ EVIDENTYX est une application de bureau open source, multiplateforme (Linux, Win
 
 ## État du projet
 
-⚠️ **Développement précoce — version 0.2.0.** Enquêtes, import de preuves (empreinte SHA-256, intégrité) et extraction d'événements (JSON, CSV, Syslog, Apache/Nginx, PCAP) disponibles ; chronologie, corrélation et graphe arrivent avec la phase 3.
+⚠️ **Développement précoce — version 0.3.0.** Enquêtes, import de preuves (empreinte SHA-256, intégrité), extraction d'événements (JSON, CSV, Syslog, Apache/Nginx, PCAP), chronologie filtrable, regroupements, pivots et graphe des entités disponibles ; détection et rapports arrivent avec la phase 4.
 
 | Phase | Contenu | État |
 |---|---|---|
 | 1 — Fondations | Dépôt, workspace Rust, Tauri 2, React/TypeScript, système de design, gestion des enquêtes | ✅ Terminée (`v0.1.0`) |
 | 2 — Ingestion | Modèle canonique, JSON, CSV, Syslog, Apache/Nginx, PCAP, hachage SHA-256 | ✅ Terminée (`v0.2.0`) |
-| 3 — Moteur d'enquête | Normalisation, SQLite, chronologie, corrélation, graphe | 🟡 Prochaine |
-| 4 — Détection et rapports | Règles de détection, coffre de preuves, exports PDF/JSON/CSV | ⚪ Planifiée |
+| 3 — Moteur d'enquête | Normalisation, SQLite, chronologie, corrélation, graphe | ✅ Terminée (`v0.3.0`) |
+| 4 — Détection et rapports | Règles de détection, coffre de preuves, exports PDF/JSON/CSV | 🟡 Prochaine |
 | 5 — Stabilisation | Tests, sécurité, performances, paquets signés | ⚪ Planifiée |
 
 Le détail est dans [`docs/feuille-de-route.md`](docs/feuille-de-route.md).
