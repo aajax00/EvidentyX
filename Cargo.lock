@@ -817,11 +817,11 @@ dependencies = [
 
 [[package]]
 name = "evidentyx-core"
-version = "0.2.0"
+version = "0.3.0"
 
 [[package]]
 name = "evidentyx-desktop"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "evidentyx-core",
  "evidentyx-evidence",
@@ -837,7 +837,7 @@ dependencies = [
 
 [[package]]
 name = "evidentyx-evidence"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "evidentyx-core",
  "sha2 0.11.1",
@@ -846,7 +846,7 @@ dependencies = [
 
 [[package]]
 name = "evidentyx-parser"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "csv",
  "evidentyx-core",
@@ -855,7 +855,7 @@ dependencies = [
 
 [[package]]
 name = "evidentyx-storage"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "evidentyx-core",
  "rusqlite",

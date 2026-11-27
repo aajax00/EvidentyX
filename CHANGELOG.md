@@ -6,6 +6,10 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ## [Non publié]
 
+## [0.3.0] - 2026-11-27
+
+Fin de la phase 3 (Moteur d'enquête) : chronologie, filtres, heures et incertitude, corrélation et graphe des entités ; nouvelle interface « poste d'analyse forensique » et guide d'utilisation intégré.
+
 ### Ajouté
 
 - Guide d'utilisation intégré (barre latérale, « Guide ») : enquêtes, preuves et intégrité, analyse, chronologie (filtres, fuseau, heure incertaine), regroupements et pivots, graphe (formes, types de liens, manipulation, inspecteur, situations courantes et limites), raccourcis, confidentialité ; lien « Lire le guide du graphe » depuis le graphe.
@@ -95,6 +99,7 @@ Première version : fin de la phase 1 (Fondations). L'application gère les enqu
 - Mode démonstration pour développer l'interface dans un navigateur (signalé à l'écran, absent des paquets).
 - Version minimale de Rust : 1.90.
 
-[Non publié]: https://github.com/aajax00/EvidentyX/compare/v0.2.0...HEAD
+[Non publié]: https://github.com/aajax00/EvidentyX/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/aajax00/EvidentyX/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/aajax00/EvidentyX/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/aajax00/EvidentyX/releases/tag/v0.1.0

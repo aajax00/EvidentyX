@@ -38,7 +38,7 @@ Objectif : explorer les événements d'une enquête, les filtrer, les relier ent
 - [x] **Étape 3.3** — Horodatages et incertitude : fuseau d'affichage (local ou UTC), précision et base de l'heure visibles, événements à l'heure déduite ou supposée signalés
 - [x] **Étape 3.4** — Corrélation : regroupement par entité (adresse, utilisateur, hôte) et par flux réseau, pivot depuis un événement
 - [x] **Étape 3.5** — Graphe des entités et de leurs relations, navigation vers les événements
-- [ ] **Version `v0.3.0`**
+- [x] **Version `v0.3.0`** — 2026-11-27
 
 ## Phase 4 — Détection et rapports → `v0.4.0`
 
