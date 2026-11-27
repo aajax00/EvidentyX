@@ -96,6 +96,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="shell">
+      {animatedBackground && <NetworkBackground className="shell-background" />}
       <div className="shell-body">
         <Sidebar collapsed={collapsed} />
         <div className="shell-main">
@@ -108,7 +109,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             </p>
           )}
           <div className="shell-stage">
-            {animatedBackground && <NetworkBackground className="shell-stage__background" />}
             <main className="shell-content">{children}</main>
           </div>
         </div>

@@ -2,7 +2,7 @@ import { FileSearch } from "lucide-react";
 import { cx } from "../components/ui/cx";
 import { useEngine } from "../engine";
 import { useInvestigations } from "../investigations/InvestigationsProvider";
-import { BrandMark } from "./BrandLogo";
+import { BrandLogo } from "./BrandLogo";
 import { NAVIGATION, type NavItem, type SectionId } from "./navigation";
 import { sectionOf, useRouter } from "./router";
 
@@ -27,13 +27,13 @@ export function Sidebar({ collapsed }: SidebarProps) {
       <button
         type="button"
         className="shell-sidebar__brand"
-        title="EvidentyX — Tableau de bord"
+        title="EVIDENTYX — Tableau de bord"
         onClick={() => navigate({ page: "home" })}
       >
-        <BrandMark size={24} />
+        <BrandLogo className="shell-sidebar__logo" />
         {!collapsed && (
           <span className="shell-sidebar__wordmark">
-            Evidenty<span className="shell-sidebar__x">X</span>
+            EVIDENTY<span className="shell-sidebar__x">X</span>
           </span>
         )}
       </button>
@@ -83,7 +83,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
 
       {!collapsed && (
         <div className="shell-sidebar__footer mono">
-          {engine.kind === "ready" ? `EvidentyX v${engine.info.appVersion}` : "EvidentyX"}
+          {engine.kind === "ready" ? `EVIDENTYX v${engine.info.appVersion}` : "EVIDENTYX"}
           <span>Hors ligne · aucune télémétrie</span>
         </div>
       )}

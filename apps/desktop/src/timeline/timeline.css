@@ -613,6 +613,47 @@ button.groups__row:hover {
   transform: rotate(45deg);
 }
 
+.graph-help {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-alpha);
+  border: var(--border-width) solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+}
+
+.graph-help strong {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+.graph-help__ip {
+  color: var(--color-danger);
+}
+
+.graph-help__host {
+  color: var(--color-accent);
+}
+
+.graph-help__user {
+  color: var(--color-warning);
+}
+
+.graph-inspector__hint,
+.graph-inspector__iso {
+  padding: var(--space-2) var(--space-3);
+  border-left: 2px solid var(--color-warning);
+  background: var(--color-warning-subtle);
+  color: var(--color-text);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.graph-inspector__iso {
+  border-left-color: var(--color-danger);
+  background: var(--color-danger-subtle);
+}
+
 .graph-inspector__body {
   display: flex;
   flex-direction: column;
@@ -663,7 +704,7 @@ button.groups__row:hover {
   border-color: var(--color-accent);
 }
 
-.graph-inspector__relations .mono:first-child {
+.graph-inspector__relations button > span:first-child {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

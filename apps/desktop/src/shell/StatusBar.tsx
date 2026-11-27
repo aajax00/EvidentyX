@@ -30,7 +30,7 @@ export function StatusBar() {
 
   const engineText =
     engine.kind === "ready"
-      ? `EvidentyX v${engine.info.appVersion} · moteur ${engine.info.engineVersion}`
+      ? `EVIDENTYX v${engine.info.appVersion} · moteur ${engine.info.engineVersion}`
       : engine.kind === "loading"
         ? "Moteur : connexion…"
         : "Moteur indisponible";

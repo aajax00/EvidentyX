@@ -34,7 +34,7 @@ export function Header({ onOpenPalette, collapsed, onToggleSidebar }: HeaderProp
         <PanelLeft size={16} aria-hidden="true" />
       </button>
       <nav className="shell-breadcrumb" aria-label="Fil d'Ariane">
-        <span className="shell-breadcrumb__root">EvidentyX</span>
+        <span className="shell-breadcrumb__root">EVIDENTYX</span>
         <span className="shell-breadcrumb__sep" aria-hidden="true">/</span>
         {openName ? (
           <>

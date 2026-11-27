@@ -15,6 +15,45 @@ const KIND: Record<EntityKind, { label: string; plural: string; color: string; c
   user: { label: "Utilisateur", plural: "Utilisateurs", color: "#e0a548", css: "var(--color-warning)" },
 };
 
+type Edge = { a: { id: string; kind: EntityKind; name: string }; b: { id: string; kind: EntityKind; name: string }; events: number };
+
+/** Nom court d'une relation, écrit sur le lien. */
+export function relationLabel(e: Pick<Edge, "a" | "b">): string {
+  if (e.a.kind === "user") return "depuis";
+  if (e.b.kind === "host") return "vue par";
+  return "connexion";
+}
+
+/** Phrase décrivant une relation du point de vue de l'entité `self`. */
+export function relationSentence(e: Edge, selfId: string): string {
+  const out = e.a.id === selfId;
+  const other = out ? e.b.name : e.a.name;
+  if (e.a.kind === "user") return out ? `utilisé depuis ${other}` : `compte ${other} utilisé depuis cette adresse`;
+  if (e.b.kind === "host") return out ? `vue par l'hôte ${other}` : `a journalisé l'adresse ${other}`;
+  return out ? `se connecte à ${other}` : `connexion reçue de ${other}`;
+}
+
+/** Clés de lecture factuelles, d'après les seuls nombres de relations. */
+export function readingHints(kind: EntityKind, edges: Edge[], selfId: string): string[] {
+  const hints: string[] = [];
+  const users = edges.filter((e) => e.a.kind === "user" && e.b.id === selfId).length;
+  const sources = edges.filter((e) => e.a.kind === "user" && e.a.id === selfId).length;
+  const out = edges.filter((e) => e.a.kind === "ip" && e.b.kind === "ip" && e.a.id === selfId).length;
+  const inc = edges.filter((e) => e.a.kind === "ip" && e.b.kind === "ip" && e.b.id === selfId).length;
+  if (kind === "ip" && users >= 2)
+    hints.push(
+      `${users} comptes utilisés depuis cette adresse. Courant derrière un NAT, un proxy ou un poste partagé. Si ce sont surtout des échecs, cela peut signaler une tentative sur plusieurs comptes (pulvérisation de mots de passe) : vérifiez avec « Afficher ses événements » et le filtre Issue : Échec.`,
+    );
+  if (kind === "user" && sources >= 2)
+    hints.push(
+      `Ce compte est utilisé depuis ${sources} adresses. Normal pour un utilisateur qui change de poste ou de réseau ; à vérifier si les adresses sont inconnues ou utilisées en même temps.`,
+    );
+  if (out >= 5)
+    hints.push(`Se connecte à ${out} destinations : poste très actif, relais, ou balayage (scan) à vérifier dans la chronologie.`);
+  if (inc >= 5) hints.push(`Reçoit des connexions de ${inc} adresses : serveur exposé, ou cible d'un trafic à examiner.`);
+  return hints;
+}
+
 /** Écart entre la disposition calculée et le monde du canevas (nœuds de 30 px). */
 const SPREAD = 1.9;
 
@@ -265,7 +304,7 @@ export function EntityGraph({
         ctx.font = '9px "IBM Plex Mono", monospace';
         ctx.fillStyle = onPath ? "#f0696a" : dimmed ? "rgba(135, 146, 164, 0.22)" : "#8792a4";
         ctx.textAlign = "center";
-        ctx.fillText(`${e.events.toLocaleString("fr-FR")} év.`, mx, my - 7);
+        ctx.fillText(`${relationLabel(e)} · ${e.events.toLocaleString("fr-FR")}`, mx, my - 7);
         ctx.restore();
       }
 
@@ -426,6 +465,15 @@ export function EntityGraph({
 
   return (
     <div className="entity-graph">
+      <p className="graph-help">
+        Chaque forme est une <strong>entité</strong> citée dans les événements retenus par les filtres :{" "}
+        <span className="graph-help__ip">losange rouge</span> = adresse IP,{" "}
+        <span className="graph-help__host">carré bleu</span> = hôte (machine qui a écrit le journal),{" "}
+        <span className="graph-help__user">carré ambre</span> = compte utilisateur. Un trait relie deux entités citées dans
+        les mêmes événements, avec leur nombre : <strong>connexion</strong> (adresse source → adresse destination),{" "}
+        <strong>depuis</strong> (compte → adresse d'où il a été utilisé), <strong>vue par</strong> (adresse → hôte qui
+        l'a journalisée). C'est un relevé des journaux, pas une conclusion.
+      </p>
       <div className="graph-toolbar">
         <div className="graph-toolbar__group">
           <span className="section-title">Entités :</span>
@@ -491,8 +539,8 @@ export function EntityGraph({
           <div className="ui-panel__body graph-inspector__body">
             {!selected ? (
               <p className="text-muted">
-                Cliquez sur une entité du graphe pour voir ses relations. Molette : zoom ; glisser le fond : déplacer ;
-                glisser une entité : la déplacer.
+                Cliquez sur une entité du graphe pour savoir avec quoi elle est en relation, et combien de fois. Molette :
+                zoom ; glisser le fond : déplacer ; glisser une entité : la déplacer.
               </p>
             ) : (
               <>
@@ -502,18 +550,26 @@ export function EntityGraph({
                     {selected.weight.toLocaleString("fr-FR")} événement{selected.weight > 1 ? "s" : ""} liés
                   </p>
                 </div>
+                {readingHints(selected.kind, relations, selected.id).map((h) => (
+                  <p key={h} className="graph-inspector__hint">
+                    {h}
+                  </p>
+                ))}
+                {isolate && (
+                  <p className="graph-inspector__iso">
+                    Relations directes isolées : le reste est estompé. Les petits carrés qui circulent vont de la source
+                    vers la destination.
+                  </p>
+                )}
                 <div>
                   <p className="section-title graph-inspector__title">Relations ({relations.length})</p>
                   <ul className="graph-inspector__relations">
                     {relations.map((r) => {
-                      const outgoing = r.a.id === selected.id;
-                      const other = outgoing ? r.b : r.a;
+                      const other = r.a.id === selected.id ? r.b : r.a;
                       return (
                         <li key={`${r.a.id}-${r.b.id}`}>
-                          <button type="button" onClick={() => setSelectedId(other.id)}>
-                            <span className="mono">
-                              {outgoing ? "→" : "←"} {other.name}
-                            </span>
+                          <button type="button" title={`Inspecter ${other.name}`} onClick={() => setSelectedId(other.id)}>
+                            <span>{relationSentence(r, selected.id)}</span>
                             <span className="mono graph-inspector__count">{r.events.toLocaleString("fr-FR")} év.</span>
                           </button>
                         </li>
@@ -525,8 +581,13 @@ export function EntityGraph({
                   <Button size="sm" variant="primary" onClick={() => onPivot({ kind: selected.kind, value: selected.name })}>
                     Afficher ses événements
                   </Button>
-                  <Button size="sm" aria-pressed={isolate} onClick={() => setIsolate((x) => !x)}>
-                    {isolate ? "Tout afficher" : "Isoler les voisins"}
+                  <Button
+                    size="sm"
+                    aria-pressed={isolate}
+                    title="N'afficher que cette entité et ses relations directes"
+                    onClick={() => setIsolate((x) => !x)}
+                  >
+                    {isolate ? "Tout afficher" : "Isoler ses relations"}
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => void copy(selected.name)}>
                     Copier

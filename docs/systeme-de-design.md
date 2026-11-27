@@ -8,7 +8,8 @@ L'esthétique est celle d'un **poste d'analyse forensique** : sobre et dense, su
 
 Repères visuels :
 
-- **Marque** : « Evidenty**X** », le X en bleu, à côté de l'emblème (loupe à empreinte), dans un bandeau sombre en haut de la barre latérale.
+- **Marque** : « EVIDENTY**X** » en capitales, le X en bleu, à côté du logo complet, dans un bandeau sombre en haut de la barre latérale.
+- **Largeur** : les pages occupent toute la largeur disponible ; les grilles passent sur une colonne aux petites largeurs.
 - **Panneaux** : bandeau d'en-tête surélevé (`--color-surface-raised`) avec titre en petites capitales, corps compact ; fond `--color-surface-alpha` qui laisse deviner la grille.
 - **Données** : chiffres, adresses, heures, identifiants et en-têtes de tableau en IBM Plex Mono ; étiquettes (`Badge`) en capitales mono sur fond et bordure teintés.
 - **En-tête de page** : titre, description courte et actions alignées à droite, séparés du contenu par un filet.
@@ -30,6 +31,8 @@ Logo source en pleine résolution : `docs/assets/logo.png` (fond transparent). F
 | `mark.png` | Emblème seul (loupe à empreinte), pour la barre latérale repliée |
 
 Composants `BrandLogo` et `BrandMark` : `src/shell/BrandLogo.tsx`. Les icônes de l'application (`src-tauri/icons/`) sont générées par `npx tauri icon src-tauri/icons/source.png` à partir du logo posé sur un carreau bleu nuit.
+
+Les icônes de l'application posent le logo sur un **fond clair** (bleu très pâle), pour qu'il se distingue dans la barre des tâches et le dock sombres.
 
 **Icône dans la barre des tâches (Linux)** : le bureau associe la fenêtre (identifiant `evidentyx-desktop`, nom du binaire) à un fichier `evidentyx-desktop.desktop`. Les paquets `.deb` et `.rpm` l'installent. Pour l'application lancée depuis les sources, `scripts/raccourci-linux.sh` le crée dans `~/.local/share/applications` (à relancer si le dépôt change de place).
 
@@ -80,7 +83,7 @@ Mises en page partagées (`src/pages/pages.css`) : `.page-header` (titre, descri
 
 **Tableau de bord** : en-tête de page ; quatre chiffres clés réels (enquêtes actives sur le total, preuves enregistrées avec intègres et analysées, événements extraits, dernière activité) ; tableau des enquêtes (référence `#id` en bleu, statut, preuves, événements, mise à jour) ; colonne latérale « Preuves récentes » (intégrité, enquête, fichier, taille, ajout) et « Feuille de route ».
 
-**Graphe des entités** (`src/timeline/EntityGraph.tsx`) : scène sur canevas à fond enfoncé avec sa propre grille de 40 px qui suit le zoom ; molette pour zoomer vers le curseur, glisser le fond pour déplacer, glisser une entité pour la déplacer ; barre de zoom (−, pourcentage, +, Ajuster, 1:1) en haut à droite ; légende en bas à gauche. Adresses IP en losange rouge, hôtes en carré bleu, utilisateurs en carré ambre ; flèche au milieu de chaque lien (source → destination) et nombre d'événements. Inspecteur à droite : nom, événements liés, relations, « Afficher ses événements », « Isoler les voisins » (liens en pointillés rouges animés et paquets qui circulent, le reste estompé), « Copier ». Équivalent clavier : liste d'entités réservée aux lecteurs d'écran.
+**Graphe des entités** (`src/timeline/EntityGraph.tsx`) : scène sur canevas à fond enfoncé avec sa propre grille de 40 px qui suit le zoom ; molette pour zoomer vers le curseur, glisser le fond pour déplacer, glisser une entité pour la déplacer ; barre de zoom (−, pourcentage, +, Ajuster, 1:1) en haut à droite ; légende en bas à gauche. Adresses IP en losange rouge, hôtes (machine qui a écrit le journal) en carré bleu, comptes utilisateurs en carré ambre. Chaque lien porte une flèche (source → destination), son type et son nombre d'événements : **connexion** (adresse → adresse), **depuis** (compte → adresse d'où il a été utilisé), **vue par** (adresse → hôte qui l'a journalisée). Une phrase au-dessus du graphe rappelle ce vocabulaire. Inspecteur à droite : nom, événements liés, relations écrites en phrases (« se connecte à… », « compte root utilisé depuis cette adresse »), clés de lecture factuelles quand les nombres le justifient (plusieurs comptes depuis une adresse, une adresse vers de nombreuses destinations…), « Afficher ses événements », « Isoler ses relations » (relations directes en pointillés rouges animés, paquets de la source vers la destination, le reste estompé), « Copier ». Équivalent clavier : liste d'entités réservée aux lecteurs d'écran.
 
 ## Coque applicative
 
@@ -102,7 +105,7 @@ Sobres et brèves ; toutes désactivées si le système demande moins d'animatio
 | Animation | Où | Durée |
 |---|---|---|
 | Écran d'ouverture : le logo se décode en ASCII (caractères brouillés qui se fixent de gauche à droite), puis le logo réel apparaît | Lancement de l'application (`src/motion/SplashScreen.tsx`) ; un clic ou une touche le passe | ~2,4 s |
-| Arrière-plan « forensique » (repris tel quel de la maquette) : grille de coordonnées de 56 px très discrète, 12 à 26 points carrés qui dérivent et se relient en équerre à moins de 170 px | Derrière toute l'interface, visible entre les panneaux (`src/motion/NetworkBackground.tsx`), 30 images/s, en pause fenêtre masquée | continue |
+| Arrière-plan « forensique » (copie exacte de la maquette, canevas fixe sur toute la fenêtre, derrière la coque) : grille de coordonnées de 56 px très discrète, 12 à 26 points carrés qui dérivent et se relient en équerre à moins de 170 px | Derrière toute l'interface, visible entre les panneaux (`src/motion/NetworkBackground.tsx`), 30 images/s, en pause fenêtre masquée | continue |
 | Chargeur « X » : anneau qui tourne autour du X bleu | Chargements (`Spinner`) | 0,9 s par tour |
 | Graphe : voisins isolés en pointillés défilants, paquet carré qui parcourt chaque lien | `EntityGraph`, uniquement quand « Isoler les voisins » est actif | continue |
 | Notification : entrée par la droite, barre de décompte | `ToastProvider` | 180 ms, puis 5 s |
