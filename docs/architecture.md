@@ -72,6 +72,7 @@ Tous les formats de preuve sont convertis vers un **événement canonique** (`ev
 | `event_groups` | Événements retenus par un filtre, regroupés par adresse IP, utilisateur, hôte ou flux réseau (nombre, échecs, premier et dernier) |
 | `entity_links` | Liens les plus fréquents entre entités (adresse source → destination, utilisateur → adresse, adresse → hôte) parmi les événements retenus par un filtre |
 | `get_dashboard` | Tableau de bord : par enquête, preuves (intègres, analysées) et événements ; dernières preuves ajoutées |
+| `run_detections` | Applique les règles de détection versionnées aux événements d'une enquête ; détections avec période, pic et événements justificatifs ([ADR 0006](decisions/0006-moteur-de-detection.md)) |
 | `cancel_task` | Annule une tâche longue (`add_evidence`, `analyze_evidence`) ; ces commandes reçoivent un identifiant de tâche et un canal de progression (octets lus sur taille, au plus 10 envois par seconde) |
 | `get_settings`, `update_settings` | Lecture et enregistrement des réglages (validation par `evidentyx-core`) |
 

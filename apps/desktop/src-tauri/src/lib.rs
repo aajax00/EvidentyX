@@ -76,6 +76,7 @@ pub fn run() {
             analysis::analyze_evidence,
             tasks::cancel_task,
             timeline::events_window,
+            timeline::run_detections,
             timeline::events_count,
             timeline::event_groups,
             timeline::entity_links,

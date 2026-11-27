@@ -6,6 +6,10 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ## [Non publié]
 
+### Ajouté
+
+- Moteur de détection : règles déclaratives et versionnées, fenêtre de temps glissante, évaluation déterministe, événements justificatifs conservés ; règles « Échecs d'authentification répétés », « Pulvérisation de mots de passe », « Balayage réseau » ; commande `run_detections` ([ADR 0006](docs/decisions/0006-moteur-de-detection.md)).
+
 ## [0.3.0] - 2026-11-27
 
 Fin de la phase 3 (Moteur d'enquête) : chronologie, filtres, heures et incertitude, corrélation et graphe des entités ; nouvelle interface « poste d'analyse forensique » et guide d'utilisation intégré.

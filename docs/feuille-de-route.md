@@ -44,7 +44,7 @@ Objectif : explorer les événements d'une enquête, les filtrer, les relier ent
 
 Objectif : signaler automatiquement les comportements suspects, de façon explicable, et produire des livrables vérifiables.
 
-- [ ] **Étape 4.1** — Moteur de détection : règles déclaratives versionnées (conditions sur les champs normalisés, seuils sur une fenêtre de temps), évaluation déterministe, premières règles fournies (échecs d'authentification répétés, pulvérisation de mots de passe, balayage de ports)
+- [x] **Étape 4.1** — Moteur de détection : règles déclaratives versionnées (conditions sur les champs normalisés, seuils sur une fenêtre de temps), évaluation déterministe, premières règles fournies (échecs d'authentification répétés, pulvérisation de mots de passe, balayage de ports)
 - [ ] **Étape 4.2** — Détections dans l'interface : liste par gravité, détail avec la règle appliquée et les événements qui la justifient, accès à la chronologie
 - [ ] **Étape 4.3** — Journal d'audit : chaque action (ajout, analyse, retrait, export) horodatée et chaînée par empreinte, vérification de la chaîne
 - [ ] **Étape 4.4** — Exports JSON et CSV des événements filtrés et des détections, avec empreinte SHA-256 du fichier produit

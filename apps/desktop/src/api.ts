@@ -344,6 +344,27 @@ export function getEntityLinks(investigationId: number, filter: EventFilter, lim
   return call("entity_links", { investigationId, filter, limit });
 }
 
+/** Miroir de `DetectionDto` : règle déclenchée par une adresse sur une période (µs UTC). */
+export interface Detection {
+  ruleId: string;
+  ruleVersion: number;
+  title: string;
+  description: string;
+  severity: "low" | "medium" | "high" | "critical";
+  sourceIp: string;
+  firstUs: number;
+  lastUs: number;
+  events: number;
+  peak: number;
+  /** Premiers événements justificatifs (au plus 50). */
+  eventIds: number[];
+}
+
+/** Applique les règles de détection fournies aux événements d'une enquête. */
+export function runDetections(investigationId: number): Promise<Detection[]> {
+  return call("run_detections", { investigationId });
+}
+
 /** Nombre d'événements retenus par le filtre. */
 export function eventsCount(investigationId: number, filter: EventFilter): Promise<number> {
   return call("events_count", { investigationId, filter });
