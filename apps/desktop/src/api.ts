@@ -362,6 +362,32 @@ export function eventsWindow(
   return call("events_window", { investigationId, filter, offset, limit });
 }
 
+/** Miroir de `DashboardDto` (src-tauri/src/overview.rs). */
+export interface Dashboard {
+  figures: Array<{
+    investigationId: number;
+    evidence: number;
+    evidenceIntact: number;
+    evidenceAnalyzed: number;
+    events: number;
+  }>;
+  recentEvidence: Array<{
+    evidenceId: number;
+    investigationId: number;
+    investigationName: string;
+    fileName: string;
+    sizeBytes: number;
+    integrity: IntegrityStatus;
+    /** Millisecondes Unix UTC. */
+    addedAt: number;
+  }>;
+}
+
+/** Chiffres du tableau de bord : par enquête, et dernières preuves ajoutées. */
+export function getDashboard(): Promise<Dashboard> {
+  return call("get_dashboard");
+}
+
 export function getOverview(investigationId: number): Promise<Overview> {
   return call("investigation_overview", { investigationId });
 }

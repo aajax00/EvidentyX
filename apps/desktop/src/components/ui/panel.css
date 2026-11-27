@@ -36,3 +36,8 @@
 .ui-panel__body {
   padding: var(--space-3);
 }
+
+/* Corps sans marge : tableau ou liste bord à bord */
+.ui-panel--flush .ui-panel__body {
+  padding: 0;
+}

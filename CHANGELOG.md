@@ -8,7 +8,9 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ### Modifié
 
-- Interface au style « poste d'analyse forensique » (inspiré de la maquette EvidentyX) : marque « Evidenty**X** » dans un bandeau, navigation à liseré avec compteur d'enquêtes, en-tête avec repli de la barre latérale, fil d'Ariane et accès à la dernière enquête, panneaux à bandeau d'en-tête, étiquettes en capitales mono, tableau de bord avec en-tête de page et chiffres clés, notifications à liseré et barre de décompte, chargeur « X », grille de fond discrète, barre d'état avec version et horloge UTC. Écran d'ouverture inchangé.
+- Interface au style « poste d'analyse forensique » (repris de la maquette EvidentyX) : marque « Evidenty**X** » dans un bandeau, navigation à liseré avec compteur d'enquêtes, en-tête avec repli de la barre latérale, fil d'Ariane et accès à la dernière enquête, panneaux à bandeau d'en-tête, étiquettes en capitales mono, notifications à liseré et barre de décompte, chargeur « X », grille de fond animée identique à la maquette, barre d'état avec version et horloge UTC. Écran d'ouverture inchangé.
+- Tableau de bord : chiffres réels (enquêtes, preuves intègres et analysées, événements, dernière activité), tableau des enquêtes avec preuves et événements, preuves récentes, feuille de route ; commande `get_dashboard`.
+- Graphe des entités sur canevas comme la maquette : zoom à la molette, déplacement, entités déplaçables, barre de zoom, légende, inspecteur (relations, événements, copie), isolation animée des voisins ; filtres par type d'entité.
 - Linux : `scripts/raccourci-linux.sh` affiche le logo dans la barre des tâches pour l'application lancée depuis les sources.
 
 ### Ajouté

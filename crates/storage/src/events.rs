@@ -88,6 +88,31 @@ pub struct EntityLink {
     pub events: u64,
 }
 
+/// Chiffres d'une enquête pour le tableau de bord.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct InvestigationFigures {
+    pub evidence: u64,
+    /// Preuves intègres à leur dernière vérification.
+    pub evidence_intact: u64,
+    /// Preuves dont des événements ont été extraits.
+    pub evidence_analyzed: u64,
+    pub events: u64,
+}
+
+/// Preuve récemment ajoutée, avec le nom de son enquête.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecentEvidence {
+    pub evidence_id: i64,
+    pub investigation_id: i64,
+    pub investigation_name: String,
+    pub file_name: String,
+    pub size_bytes: u64,
+    /// `intact`, `modified` ou `missing`.
+    pub integrity: String,
+    /// Millisecondes Unix UTC.
+    pub added_at: i64,
+}
+
 /// Critère sur l'heure d'un événement.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TimeQuality {
@@ -663,6 +688,59 @@ impl Storage {
         Ok(links)
     }
 
+    /// Chiffres de chaque enquête (preuves, intègres, analysées, événements).
+    pub fn investigation_figures(&self) -> Result<BTreeMap<InvestigationId, InvestigationFigures>> {
+        let mut out: BTreeMap<InvestigationId, InvestigationFigures> = BTreeMap::new();
+        let to_u64 = |n: i64| u64::try_from(n).unwrap_or(0);
+        let mut stmt = self.conn.prepare(
+            "SELECT investigation_id, count(*), count(CASE WHEN integrity = 'intact' THEN 1 END),
+                    count(CASE WHEN EXISTS (SELECT 1 FROM events WHERE evidence_id = evidence.id) THEN 1 END)
+             FROM evidence GROUP BY investigation_id",
+        )?;
+        for row in stmt.query_map([], |r| {
+            Ok((
+                r.get::<_, i64>(0)?,
+                r.get::<_, i64>(1)?,
+                r.get::<_, i64>(2)?,
+                r.get::<_, i64>(3)?,
+            ))
+        })? {
+            let (id, n, intact, analyzed) = row?;
+            let f = out.entry(InvestigationId::new(id)).or_default();
+            (f.evidence, f.evidence_intact, f.evidence_analyzed) =
+                (to_u64(n), to_u64(intact), to_u64(analyzed));
+        }
+        let mut stmt = self
+            .conn
+            .prepare("SELECT investigation_id, count(*) FROM events GROUP BY investigation_id")?;
+        for row in stmt.query_map([], |r| Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1)?)))? {
+            let (id, n) = row?;
+            out.entry(InvestigationId::new(id)).or_default().events = to_u64(n);
+        }
+        Ok(out)
+    }
+
+    /// Dernières preuves ajoutées, toutes enquêtes confondues.
+    pub fn recent_evidence(&self, limit: u32) -> Result<Vec<RecentEvidence>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT e.id, e.investigation_id, i.name, e.file_name, e.size_bytes, e.integrity, e.added_at
+             FROM evidence e JOIN investigations i ON i.id = e.investigation_id
+             ORDER BY e.added_at DESC, e.id DESC LIMIT ?1",
+        )?;
+        let rows = stmt.query_map([limit.clamp(1, 100)], |r| {
+            Ok(RecentEvidence {
+                evidence_id: r.get(0)?,
+                investigation_id: r.get(1)?,
+                investigation_name: r.get(2)?,
+                file_name: r.get(3)?,
+                size_bytes: u64::try_from(r.get::<_, i64>(4)?).unwrap_or(0),
+                integrity: r.get(5)?,
+                added_at: r.get(6)?,
+            })
+        })?;
+        Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+    }
+
     /// Nombre d'événements d'une enquête retenus par `filter`.
     pub fn count_filtered(
         &self,
@@ -983,6 +1061,25 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(db.count_filtered(inv, &no_port).unwrap(), 1);
+        let figures = db.investigation_figures().unwrap();
+        assert_eq!(
+            figures[&inv],
+            InvestigationFigures {
+                evidence: 1,
+                evidence_intact: 1,
+                evidence_analyzed: 1,
+                events: 5
+            }
+        );
+        let recent = db.recent_evidence(5).unwrap();
+        assert_eq!(
+            (
+                recent.len(),
+                recent[0].file_name.as_str(),
+                recent[0].investigation_name.as_str()
+            ),
+            (1, "auth.log", "Test")
+        );
         let links = db.entity_links(inv, &all, 10).unwrap();
         let summary: Vec<(&str, &str, &str, u64)> = links
             .iter()

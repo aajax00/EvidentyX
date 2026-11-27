@@ -1,16 +1,10 @@
 import { useEffect, useRef } from "react";
 
-/** Densité : un point pour cette surface (px²), entre 12 et 26 points. */
-const AREA_PER_NODE = 62000;
-const MIN_NODES = 12;
-const MAX_NODES = 26;
-/** Distance maximale d'un lien entre deux points (px). */
-const LINK_DISTANCE = 170;
 /** Pas de la grille de coordonnées (px). */
 const GRID = 56;
-/** Vitesse de dérive (px par image à 30 images/s). */
-const SPEED = 0.11;
-const FRAME_MS = 1000 / 30;
+/** Distance maximale d'une liaison entre deux points (px). */
+const LINK_DISTANCE = 170;
+const FRAME_MS = 33;
 
 interface Node {
   x: number;
@@ -20,11 +14,11 @@ interface Node {
 }
 
 /**
- * Animation d'arrière-plan « forensique » : grille de coordonnées très discrète
- * et quelques points carrés qui dérivent lentement, reliés en équerre quand ils
- * se rapprochent.
- * Purement décorative (aria-hidden), en pause quand la fenêtre est masquée.
- * Le parent décide de l'afficher (réglage utilisateur, réduction des animations).
+ * Arrière-plan « forensique » (repris de la maquette EvidentyX) : grille de
+ * coordonnées très discrète et 12 à 26 points carrés qui dérivent lentement,
+ * reliés en équerre quand ils se rapprochent. Purement décoratif
+ * (aria-hidden), en pause quand la fenêtre est masquée. Le parent décide de
+ * l'afficher (réglage utilisateur, réduction des animations).
  */
 export function NetworkBackground({ className }: { className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -34,91 +28,81 @@ export function NetworkBackground({ className }: { className?: string }) {
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
 
-    let width = 0;
-    let height = 0;
+    let w = 0;
+    let h = 0;
     let nodes: Node[] = [];
     let raf = 0;
     let last = 0;
 
-    function layout() {
+    function resize() {
       if (!canvas || !ctx) return;
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
-      width = rect.width;
-      height = rect.height;
-      canvas.width = Math.max(1, Math.round(width * dpr));
-      canvas.height = Math.max(1, Math.round(height * dpr));
+      w = rect.width;
+      h = rect.height;
+      canvas.width = Math.max(1, Math.round(w * dpr));
+      canvas.height = Math.max(1, Math.round(h * dpr));
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const count = Math.min(MAX_NODES, Math.max(MIN_NODES, Math.round((width * height) / AREA_PER_NODE)));
-      // Conserve les points existants pour éviter un saut visuel au redimensionnement.
-      nodes = nodes.filter((n) => n.x <= width && n.y <= height).slice(0, count);
-      while (nodes.length < count) {
-        const angle = Math.random() * Math.PI * 2;
-        nodes.push({
-          x: Math.random() * width,
-          y: Math.random() * height,
-          vx: Math.cos(angle) * SPEED * (0.4 + Math.random()),
-          vy: Math.sin(angle) * SPEED * (0.4 + Math.random()),
-        });
-      }
+      const count = Math.min(26, Math.max(12, Math.floor((w * h) / 62000)));
+      nodes = Array.from({ length: count }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.22,
+        vy: (Math.random() - 0.5) * 0.22,
+      }));
     }
 
-    function step(now: number) {
-      raf = requestAnimationFrame(step);
-      if (now - last < FRAME_MS) return;
+    function draw(now: number) {
+      raf = requestAnimationFrame(draw);
+      if (now - last < FRAME_MS || !ctx) return;
       last = now;
-      if (!ctx) return;
+      ctx.clearRect(0, 0, w, h);
 
-      for (const n of nodes) {
-        n.x += n.vx;
-        n.y += n.vy;
-        if (n.x < 0 || n.x > width) n.vx *= -1;
-        if (n.y < 0 || n.y > height) n.vy *= -1;
-      }
-
-      ctx.clearRect(0, 0, width, height);
-      ctx.lineWidth = 1;
-
-      // Grille de coordonnées très discrète.
+      // Grille orthogonale très discrète.
       ctx.strokeStyle = "rgba(34, 43, 58, 0.22)";
+      ctx.lineWidth = 1;
       ctx.beginPath();
-      for (let x = 0; x < width; x += GRID) {
-        ctx.moveTo(x + 0.5, 0);
-        ctx.lineTo(x + 0.5, height);
+      for (let x = 0; x < w; x += GRID) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
       }
-      for (let y = 0; y < height; y += GRID) {
-        ctx.moveTo(0, y + 0.5);
-        ctx.lineTo(width, y + 0.5);
+      for (let y = 0; y < h; y += GRID) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
       }
       ctx.stroke();
 
-      // Liaisons orthogonales (en équerre) entre points proches.
+      // Points et liaisons en équerre.
       for (let i = 0; i < nodes.length; i++) {
-        const a = nodes[i]!;
+        const n = nodes[i]!;
+        n.x += n.vx;
+        n.y += n.vy;
+        if (n.x < 10 || n.x > w - 10) n.vx *= -1;
+        if (n.y < 10 || n.y > h - 10) n.vy *= -1;
         for (let j = i + 1; j < nodes.length; j++) {
-          const b = nodes[j]!;
-          const d = Math.hypot(a.x - b.x, a.y - b.y);
-          if (d > LINK_DISTANCE) continue;
-          ctx.strokeStyle = `rgba(61, 143, 240, ${((1 - d / LINK_DISTANCE) * 0.11).toFixed(3)})`;
+          const m = nodes[j]!;
+          const dist = Math.hypot(n.x - m.x, n.y - m.y);
+          if (dist >= LINK_DISTANCE) continue;
+          ctx.strokeStyle = `rgba(61, 143, 240, ${((1 - dist / LINK_DISTANCE) * 0.11).toFixed(3)})`;
           ctx.beginPath();
-          ctx.moveTo(a.x, a.y);
-          ctx.lineTo(b.x, a.y);
-          ctx.lineTo(b.x, b.y);
+          ctx.moveTo(n.x, n.y);
+          ctx.lineTo(m.x, n.y);
+          ctx.lineTo(m.x, m.y);
           ctx.stroke();
         }
+        ctx.fillStyle = "rgba(49, 60, 79, 0.55)";
+        ctx.fillRect(n.x - 1.5, n.y - 1.5, 3, 3);
       }
-      ctx.fillStyle = "rgba(49, 60, 79, 0.55)";
-      for (const n of nodes) ctx.fillRect(n.x - 1.5, n.y - 1.5, 3, 3);
     }
 
     function start() {
       cancelAnimationFrame(raf);
-      if (!document.hidden) raf = requestAnimationFrame(step);
+      if (!document.hidden) raf = requestAnimationFrame(draw);
     }
 
-    layout();
+    resize();
     start();
-    const observer = new ResizeObserver(layout);
+    const observer = new ResizeObserver(resize);
     observer.observe(canvas);
     document.addEventListener("visibilitychange", start);
     return () => {

@@ -80,6 +80,7 @@ pub fn run() {
             timeline::event_groups,
             timeline::entity_links,
             overview::investigation_overview,
+            overview::get_dashboard,
         ])
         .run(tauri::generate_context!())
         .expect("échec du démarrage de l'application EVIDENTYX");

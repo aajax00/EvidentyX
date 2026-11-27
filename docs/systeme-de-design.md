@@ -76,7 +76,11 @@ Importés depuis `src/components/ui` :
 
 Les classes CSS des composants sont préfixées par `ui-` pour éviter les collisions. Classes utilitaires globales : `.mono` (données techniques), `.section-title` (titre en petites capitales), `.sr-only` (texte réservé aux lecteurs d'écran).
 
-Mises en page partagées (`src/pages/pages.css`) : `.page-header` (titre, description, actions), `.kpi-grid` / `.kpi-card` (chiffres clés : libellé en petites capitales, valeur en mono, précision), `.data-table` (tableau dense, en-têtes en capitales mono).
+Mises en page partagées (`src/pages/pages.css`) : `.page-header` (titre, description, actions), `.kpi-grid` / `.kpi-card` (chiffres clés : libellé en petites capitales, valeur en mono, précision), `.data-table` (tableau dense, en-têtes en capitales mono), `.home-grid` (colonne principale et colonne latérale). Variante `ui-panel--flush` : panneau sans marge intérieure, pour un tableau ou une liste bord à bord.
+
+**Tableau de bord** : en-tête de page ; quatre chiffres clés réels (enquêtes actives sur le total, preuves enregistrées avec intègres et analysées, événements extraits, dernière activité) ; tableau des enquêtes (référence `#id` en bleu, statut, preuves, événements, mise à jour) ; colonne latérale « Preuves récentes » (intégrité, enquête, fichier, taille, ajout) et « Feuille de route ».
+
+**Graphe des entités** (`src/timeline/EntityGraph.tsx`) : scène sur canevas à fond enfoncé avec sa propre grille de 40 px qui suit le zoom ; molette pour zoomer vers le curseur, glisser le fond pour déplacer, glisser une entité pour la déplacer ; barre de zoom (−, pourcentage, +, Ajuster, 1:1) en haut à droite ; légende en bas à gauche. Adresses IP en losange rouge, hôtes en carré bleu, utilisateurs en carré ambre ; flèche au milieu de chaque lien (source → destination) et nombre d'événements. Inspecteur à droite : nom, événements liés, relations, « Afficher ses événements », « Isoler les voisins » (liens en pointillés rouges animés et paquets qui circulent, le reste estompé), « Copier ». Équivalent clavier : liste d'entités réservée aux lecteurs d'écran.
 
 ## Coque applicative
 
@@ -98,8 +102,9 @@ Sobres et brèves ; toutes désactivées si le système demande moins d'animatio
 | Animation | Où | Durée |
 |---|---|---|
 | Écran d'ouverture : le logo se décode en ASCII (caractères brouillés qui se fixent de gauche à droite), puis le logo réel apparaît | Lancement de l'application (`src/motion/SplashScreen.tsx`) ; un clic ou une touche le passe | ~2,4 s |
-| Arrière-plan « forensique » : grille de coordonnées de 56 px très discrète, quelques points carrés qui dérivent et se relient en équerre quand ils se rapprochent | Derrière toute l'interface, visible entre les panneaux (`src/motion/NetworkBackground.tsx`), 30 images/s, en pause fenêtre masquée | continue |
+| Arrière-plan « forensique » (repris tel quel de la maquette) : grille de coordonnées de 56 px très discrète, 12 à 26 points carrés qui dérivent et se relient en équerre à moins de 170 px | Derrière toute l'interface, visible entre les panneaux (`src/motion/NetworkBackground.tsx`), 30 images/s, en pause fenêtre masquée | continue |
 | Chargeur « X » : anneau qui tourne autour du X bleu | Chargements (`Spinner`) | 0,9 s par tour |
+| Graphe : voisins isolés en pointillés défilants, paquet carré qui parcourt chaque lien | `EntityGraph`, uniquement quand « Isoler les voisins » est actif | continue |
 | Notification : entrée par la droite, barre de décompte | `ToastProvider` | 180 ms, puis 5 s |
 | Ouverture des boîtes de dialogue et de la palette | Fondu et léger déplacement | 160–180 ms |
 | Changement de page | Fondu et montée de 6 px | 160 ms |
