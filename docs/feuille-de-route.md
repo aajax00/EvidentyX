@@ -42,7 +42,14 @@ Objectif : explorer les événements d'une enquête, les filtrer, les relier ent
 
 ## Phase 4 — Détection et rapports → `v0.4.0`
 
-Règles de détection versionnées · coffre de preuves · journal d'audit · exports PDF, JSON, CSV.
+Objectif : signaler automatiquement les comportements suspects, de façon explicable, et produire des livrables vérifiables.
+
+- [ ] **Étape 4.1** — Moteur de détection : règles déclaratives versionnées (conditions sur les champs normalisés, seuils sur une fenêtre de temps), évaluation déterministe, premières règles fournies (échecs d'authentification répétés, pulvérisation de mots de passe, balayage de ports)
+- [ ] **Étape 4.2** — Détections dans l'interface : liste par gravité, détail avec la règle appliquée et les événements qui la justifient, accès à la chronologie
+- [ ] **Étape 4.3** — Journal d'audit : chaque action (ajout, analyse, retrait, export) horodatée et chaînée par empreinte, vérification de la chaîne
+- [ ] **Étape 4.4** — Exports JSON et CSV des événements filtrés et des détections, avec empreinte SHA-256 du fichier produit
+- [ ] **Étape 4.5** — Rapport d'enquête PDF : résumé, preuves et intégrité, chronologie retenue, détections, annexes
+- [ ] **Version `v0.4.0`**
 
 ## Phase 5 — Stabilisation → `v1.0.0`
 
